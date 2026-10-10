@@ -21,7 +21,11 @@
 
 @include('layouts.partials.app-bar')
 
-<div class="flex min-h-[calc(100vh-56px)]">
+{{-- pt-14 clears the fixed 56px app bar. The header is `fixed`, so it is
+     out of flow and would otherwise sit on top of the first 56px of every
+     page (ui-spec.md §Layout draws this offset). min-h-screen replaces the
+     old calc(100vh - 56px), which assumed the offset was somewhere. --}}
+<div class="flex min-h-screen pt-14">
     @include('layouts.partials.side-nav')
 
     {{-- lg:pl-60 clears the fixed 240px side nav; without it the nav
@@ -33,7 +37,9 @@
             @yield('content')
         </main>
 
-        <footer class="border-t border-border-subtle px-6 py-3 text-caption text-text-muted">
+        {{-- Same responsive padding as <main> above; px-6 alone left the
+             footer inset further than the content on narrow screens. --}}
+        <footer class="border-t border-border-subtle px-4 py-3 text-caption text-text-muted sm:px-6">
             KlinikForm SIMRS &middot; Permenkes No. 24/2022 &middot;
             <span class="font-mono">{{ now()->format('d/m/Y H:i') }} WIB</span>
         </footer>

@@ -7,6 +7,7 @@ namespace Tests\Browser;
 use App\Models\Encounter;
 use Closure;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -20,6 +21,18 @@ use Tests\DuskTestCase;
  */
 class AccessibilityTest extends DuskTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Not the full prepare(): these scenarios only read pages, so a fresh
+        // migration buys nothing. The limiter flush does — without it the three
+        // logins here share one five-per-minute budget with the workflow suite
+        // and the login intermittently answers 429, which surfaces as a
+        // timeout rather than as the throttle that caused it.
+        Cache::flush();
+    }
+
     public function test_the_login_screen_has_no_serious_violations(): void
     {
         $this->browse(fn (Browser $browser) => $this->assertNoSeriousViolations($browser, fn () => $browser->visit('/login')));

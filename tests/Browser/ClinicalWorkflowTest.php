@@ -155,6 +155,13 @@ class ClinicalWorkflowTest extends DuskTestCase
                 ->assertSee('Formulir Triase Gawat Darurat')
                 ->assertSee('Skala Koma Glasgow');
 
+            // The app bar is fixed 56px tall, so the content wrapper has to
+            // offset it — otherwise it covers the top of every page. >=
+            // rather than == because a patient strip pushes main further down.
+            expect($browser->script(
+                'return document.querySelector("main").getBoundingClientRect().top >= 56;'
+            )[0])->toBeTrue();
+
             // Arrival details and vitals. arrival_time and transport_mode are
             // required by the schema, and the server refuses the whole form if
             // either is missing.
