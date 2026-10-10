@@ -26,6 +26,17 @@
             'href' => route('compliance.audit.index'),
             'active' => 'compliance.audit.*',
         ] : null,
+        $user?->can('manage', App\Models\WebhookEndpoint::class) ? [
+            'label' => 'Endpoint Webhook',
+            'href' => route('admin.webhooks.index'),
+            'active' => 'admin.webhooks.*',
+        ] : null,
+        // security.md §MFA: enrolment is self-service, so every role gets it.
+        $user !== null ? [
+            'label' => 'Keamanan Akun',
+            'href' => route('portal.two-factor.show'),
+            'active' => 'portal.two-factor.*',
+        ] : null,
     ]));
 @endphp
 

@@ -20,6 +20,18 @@ use Illuminate\Support\Facades\Log;
  */
 final class WebhookDispatcher
 {
+    /**
+     * Every event this dispatcher can emit. Subscribers may only choose from
+     * this list, so an integrator cannot register for a notification that
+     * would never arrive (architecture.md §Integration).
+     *
+     * @var list<string>
+     */
+    public const EVENTS = [
+        'clinical.submission.created',
+        'clinical.assessment.locked',
+    ];
+
     public function __construct(
         private readonly HttpFactory $http = new HttpFactory,
     ) {}

@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\SchemaManagerController;
+use App\Http\Controllers\Admin\WebhookController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Compliance\AuditTrailController;
 use App\Http\Controllers\Portal\DoctorController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\NurseIntakeController;
+use App\Http\Controllers\Portal\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,6 +54,16 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/portal/doctor/record/{submission}', [DoctorController::class, 'record'])
         ->name('portal.doctor.record');
 
+    // --- Account security (security.md §MFA) --------------------------------
+    Route::get('/portal/account/two-factor', [TwoFactorController::class, 'show'])
+        ->name('portal.two-factor.show');
+    Route::post('/portal/account/two-factor', [TwoFactorController::class, 'start'])
+        ->name('portal.two-factor.start');
+    Route::post('/portal/account/two-factor/confirm', [TwoFactorController::class, 'confirm'])
+        ->name('portal.two-factor.confirm');
+    Route::delete('/portal/account/two-factor', [TwoFactorController::class, 'destroy'])
+        ->name('portal.two-factor.destroy');
+
     // --- SIMRS deployment engineer ------------------------------------------
     Route::middleware('can:manage,App\Models\FormTemplate')->group(function (): void {
         Route::get('/admin/schemas', [SchemaManagerController::class, 'index'])->name('admin.schemas.index');
@@ -60,6 +72,19 @@ Route::middleware('auth')->group(function (): void {
             ->name('admin.schemas.validate');
         Route::post('/admin/schemas/{template}/publish', [SchemaManagerController::class, 'publish'])
             ->name('admin.schemas.publish');
+
+    });
+
+    // --- Outbound integration -----------------------------------------------
+    // Separate from schema management: a webhook endpoint is a standing
+    // exfiltration route for patient data (FR-15).
+    Route::middleware('can:manage,App\Models\WebhookEndpoint')->group(function (): void {
+        Route::get('/admin/webhooks', [WebhookController::class, 'index'])->name('admin.webhooks.index');
+        Route::post('/admin/webhooks', [WebhookController::class, 'store'])->name('admin.webhooks.store');
+        Route::put('/admin/webhooks/{webhookEndpoint}', [WebhookController::class, 'update'])
+            ->name('admin.webhooks.update');
+        Route::delete('/admin/webhooks/{webhookEndpoint}', [WebhookController::class, 'destroy'])
+            ->name('admin.webhooks.destroy');
     });
 
     // --- Medical Records Officer --------------------------------------------
