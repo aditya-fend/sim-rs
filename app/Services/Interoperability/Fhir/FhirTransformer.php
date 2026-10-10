@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Config;
  */
 final class FhirTransformer
 {
+    /** @return array<string, mixed> */
     public function patient(Patient $patient): array
     {
         $resource = [
@@ -61,9 +62,11 @@ final class FhirTransformer
      * AC-06.1 requires status, class, subject, participant, period and
      * serviceType.
      */
+    /** @return array<string, mixed> */
     public function encounter(Encounter $encounter): array
     {
-        $patient = $encounter->patient;
+        // belongsTo() is typed nullable, but encounters always resolve here.
+        $patient = $encounter->patient()->firstOrFail();
         $dpjp = $encounter->dpjp;
 
         $resource = [
@@ -84,8 +87,8 @@ final class FhirTransformer
                     : ($encounter->encounter_type === EncounterType::Inpatient ? 'inpatient' : 'ambulatory'),
             ],
             'subject' => [
-                'reference' => 'Patient/'.($patient?->ihs_patient_id ?? 'unknown'),
-                'display' => $patient?->full_name,
+                'reference' => 'Patient/'.($patient->ihs_patient_id ?? 'unknown'),
+                'display' => $patient->full_name,
             ],
             'period' => [
                 'start' => $encounter->admission_time->toIso8601ZuluString(),
@@ -125,12 +128,12 @@ final class FhirTransformer
      * AC-06.2: a searchset Bundle of Condition resources with ICD-10 codings
      * under the HL7 SID system and clinicalStatus "active".
      *
-     * @param  list<array{code: string|null, display: string|null}>  $diagnoses
+     * @param  array<int, array{code: string|null, display: string|null}>  $diagnoses
      * @return array<string, mixed>
      */
     public function conditionBundle(Encounter $encounter, array $diagnoses): array
     {
-        $patientReference = 'Patient/'.($encounter->patient?->ihs_patient_id ?? 'unknown');
+        $patientReference = 'Patient/'.($encounter->patient()->firstOrFail()->ihs_patient_id ?? 'unknown');
 
         $entries = [];
 
@@ -174,6 +177,8 @@ final class FhirTransformer
                     'recordedDate' => $encounter->admission_time->toIso8601ZuluString(),
                 ],
             ];
+
+            $index++;
         }
 
         return [
@@ -187,18 +192,18 @@ final class FhirTransformer
     /**
      * Diagnosis rows sourced from locked submissions on the encounter.
      *
-     * @return list<array{code: string|null, display: string|null}>
+     * @return array<int, array{code: string|null, display: string|null}>
      */
     public function diagnosesFor(Encounter $encounter): array
     {
-        return $encounter->submissions()
+        return array_values($encounter->submissions()
             ->whereNotNull('primary_icd10_code')
             ->get()
             ->map(static fn ($submission): array => [
                 'code' => $submission->primary_icd10_code,
                 'display' => self::describe((string) $submission->primary_icd10_code),
             ])
-            ->all();
+            ->all());
     }
 
     /**

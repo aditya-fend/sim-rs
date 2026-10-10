@@ -52,7 +52,7 @@ class AssessmentController extends Controller
         ]);
 
         $signedAt = now();
-        $signerId = (string) $request->user()->id;
+        $signerId = (string) $this->currentUser($request)->id;
 
         $signature = DB::transaction(function () use ($submission, $validated, $signedAt, $signerId): string {
             // Re-check under the transaction: a concurrent sign must not slip
@@ -108,7 +108,7 @@ class AssessmentController extends Controller
             'submission_id' => $submission->id,
             'status' => SubmissionStatus::Locked->value,
             'signature_hash' => $signature,
-            'signed_by' => $request->user()->name,
+            'signed_by' => $this->currentUser($request)->name,
             'signed_at' => $signedAt->toIso8601ZuluString(),
         ], 'Assessment successfully signed and permanently locked.');
     }

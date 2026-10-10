@@ -67,7 +67,7 @@ final class WebhookDispatcher
                     'X-KlinikForm-Signature' => self::sign($body, $endpoint->secret()),
                     'X-KlinikForm-Event' => $event,
                 ])
-                ->post($endpoint->url, $body);
+                ->withBody($body, 'application/json')->post($endpoint->url);
         } catch (\Throwable $e) {
             Log::warning('Webhook delivery failed.', [
                 'endpoint_id' => $endpoint->id,

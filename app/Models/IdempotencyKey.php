@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidKey;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,6 +17,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $endpoint
  * @property array<string, mixed> $response_body
  * @property int $response_status
+ * @property string|null $user_id
+ * @property CarbonInterface $expires_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class IdempotencyKey extends Model
 {

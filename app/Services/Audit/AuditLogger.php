@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Auth;
  */
 final class AuditLogger
 {
+    /**
+     * @param  array<array-key, mixed>  $payload
+     */
     public function record(
         AuditAction $action,
         string $resourceType,
@@ -44,12 +47,7 @@ final class AuditLogger
     }
 
     /**
-     * Hash the state of a model, excluding fields that change for reasons
-     * unrelated to clinical content. `$model->toArray()` would include
-     * `updated_at`, which flips on any unrelated write and would make every
-     * re-check look like tampering.
-     *
-     * @return array<string, mixed>
+     * Audit a model in its current state.
      */
     public function recordFor(
         AuditAction $action,
@@ -68,7 +66,12 @@ final class AuditLogger
     }
 
     /**
-     * @return array<string, mixed>
+     * Hashable state of a model, excluding fields that change for reasons
+     * unrelated to clinical content. `$model->toArray()` would include
+     * `updated_at`, which flips on any unrelated write and would make every
+     * re-check look like tampering.
+     *
+     * @return array<array-key, mixed>
      */
     public function stateOf(Model $model): array
     {

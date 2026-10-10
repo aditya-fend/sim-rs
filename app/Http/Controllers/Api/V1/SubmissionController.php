@@ -62,7 +62,7 @@ class SubmissionController extends Controller
             $encounter,
             $template,
             $validated['payload_data'],
-            $request->user(),
+            $this->currentUser($request),
             $validated['encrypted_anamnesis'] ?? null,
             $request,
         );
@@ -124,8 +124,10 @@ class SubmissionController extends Controller
      */
     private function resolveTemplate(array $validated): ?FormTemplate
     {
-        if (isset($validated['form_template_id']) && $validated['form_template_id'] !== null) {
-            return FormTemplate::query()->find($validated['form_template_id']);
+        if (! empty($validated['form_template_id'])) {
+            $found = FormTemplate::query()->find($validated['form_template_id']);
+
+            return $found instanceof FormTemplate ? $found : null;
         }
 
         $code = (string) $validated['form_template_code'];

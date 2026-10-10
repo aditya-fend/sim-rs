@@ -47,7 +47,7 @@ class DraftController extends Controller
             [
                 'encounter_id' => $validated['encounter_id'],
                 'form_template_id' => $validated['form_template_id'],
-                'user_id' => $request->user()->id,
+                'user_id' => $this->currentUser($request)->id,
             ],
             [
                 'draft_payload' => $validated['draft_payload'],
@@ -73,7 +73,7 @@ class DraftController extends Controller
             ->with('template')
             ->where('encounter_id', $encounterId)
             ->where('form_template_id', $templateId)
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $this->currentUser($request)->id)
             ->where('expires_at', '>', now())
             ->first();
 
@@ -84,7 +84,7 @@ class DraftController extends Controller
         return ApiResponse::success([
             'draft_id' => $draft->id,
             'draft_payload' => $draft->draft_payload,
-            'updated_at' => $draft->updated_at->toIso8601ZuluString(),
+            'updated_at' => $draft->updated_at?->toIso8601ZuluString(),
             'expires_at' => $draft->expires_at->toIso8601ZuluString(),
         ]);
     }
@@ -97,7 +97,7 @@ class DraftController extends Controller
         DraftSubmission::query()
             ->where('encounter_id', $encounterId)
             ->where('form_template_id', $templateId)
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $this->currentUser($request)->id)
             ->delete();
 
         return ApiResponse::success([], 'Draf dihapus.');
@@ -109,7 +109,7 @@ class DraftController extends Controller
     public function indexForEncounter(Request $request, Encounter $encounter): JsonResponse
     {
         $drafts = $encounter->drafts()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $this->currentUser($request)->id)
             ->where('expires_at', '>', now())
             ->with('template')
             ->get();
@@ -127,7 +127,7 @@ class DraftController extends Controller
                 'draft_id' => $draft->id,
                 'form_template_id' => $draft->form_template_id,
                 'form_template_code' => $draft->template?->code,
-                'updated_at' => $draft->updated_at->toIso8601ZuluString(),
+                'updated_at' => $draft->updated_at?->toIso8601ZuluString(),
                 'expires_at' => $draft->expires_at->toIso8601ZuluString(),
             ])->all(),
         ]);

@@ -47,10 +47,11 @@ final class SepService
             ];
         }
 
-        $patient = $encounter->patient;
+        $patient = $encounter->patient()->firstOrFail();
+        $rujukanCode = ((array) ($tSep['rujukan'] ?? []))['ppkRujukan'] ?? null;
         $sepNumber = $this->nextSepNumber();
 
-        $record = DB::transaction(function () use ($encounter, $patient, $tSep, $cardNumber, $poli, $diagAwal, $sepNumber, $requestTimestamp): BpjsSepRecord {
+        $record = DB::transaction(function () use ($encounter, $patient, $tSep, $cardNumber, $poli, $diagAwal, $rujukanCode, $sepNumber, $requestTimestamp): BpjsSepRecord {
             $responseBody = [
                 'metaData' => ['code' => '200', 'message' => 'Sukses'],
                 'response' => [
@@ -58,7 +59,7 @@ final class SepService
                         'noSep' => $sepNumber,
                         'tglSep' => (string) ($tSep['tglSep'] ?? now()->toDateString()),
                         'noKartu' => $cardNumber,
-                        'nama' => $patient?->full_name,
+                        'nama' => $patient->full_name,
                         'jnsPelayanan' => $this->serviceLabel($tSep),
                         'poli' => (string) ($poli['tujuan'] ?? 'IGD'),
                         'diagnosa' => $diagAwal !== '' ? $diagAwal.' - '.FhirTransformer::describe($diagAwal) : '',
@@ -69,11 +70,11 @@ final class SepService
 
             return BpjsSepRecord::create([
                 'encounter_id' => $encounter->id,
-                'patient_id' => $patient?->id ?? $encounter->patient_id,
+                'patient_id' => $encounter->patient_id,
                 'sep_number' => $sepNumber,
                 'bpjs_card_number' => $cardNumber,
                 'poli_code' => (string) ($poli['tujuan'] ?? 'IGD'),
-                'faskes_rujukan_code' => (string) ((array) ($tSep['rujukan'] ?? []))['ppkRujukan'] ?? null,
+                'faskes_rujukan_code' => $rujukanCode === null ? null : (string) $rujukanCode,
                 'diagnosis_icd10' => $diagAwal,
                 'signature_used' => $this->signature->sign(
                     (string) Config::get('klinikform.bpjs.cons_id'),
