@@ -58,6 +58,9 @@ final class BpjsSignature
                 (string) Config::get('klinikform.bpjs.secret_key'),
                 $timestamp,
             ),
+            // BpjsSignatureAuth rejects a request without this, so it belongs
+            // with the rest of the handshake rather than at each call site.
+            'user_key' => (string) Config::get('klinikform.bpjs.user_key'),
         ];
     }
 

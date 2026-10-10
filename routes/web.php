@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AdminToolsController;
 use App\Http\Controllers\Admin\SchemaManagerController;
 use App\Http\Controllers\Admin\WebhookController;
 use App\Http\Controllers\Auth\LoginController;
@@ -42,16 +43,24 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware('can:createAny,App\Models\FormSubmission')->group(function (): void {
         Route::get('/portal/nurse/intake', [NurseIntakeController::class, 'index'])
             ->name('portal.nurse.intake');
+        // whereUuid, not just the type-hint: without it a non-UUID segment
+        // skips implicit binding, arrives as a string and becomes a TypeError
+        // (HTTP 500) instead of the 404 a bad URL should get.
         Route::get('/portal/nurse/intake/{encounter}', [NurseIntakeController::class, 'form'])
+            ->whereUuid('encounter')
             ->name('portal.nurse.intake.form');
     });
 
     // --- Attending doctor / DPJP --------------------------------------------
     Route::get('/portal/doctor/worklist', [DoctorController::class, 'worklist'])
         ->name('portal.doctor.worklist');
+    // whereUuid for the same reason as the nurse form above: a non-UUID
+    // segment must be a 404, not a 500.
     Route::get('/portal/doctor/assessment/{encounter}', [DoctorController::class, 'assessment'])
+        ->whereUuid('encounter')
         ->name('portal.doctor.assessment');
     Route::get('/portal/doctor/record/{submission}', [DoctorController::class, 'record'])
+        ->whereUuid('submission')
         ->name('portal.doctor.record');
 
     // --- Account security (security.md §MFA) --------------------------------
@@ -79,6 +88,11 @@ Route::middleware('auth')->group(function (): void {
     // Separate from schema management: a webhook endpoint is a standing
     // exfiltration route for patient data (FR-15).
     Route::middleware('can:manage,App\Models\WebhookEndpoint')->group(function (): void {
+        Route::get('/admin', [AdminToolsController::class, 'dashboard'])->name('admin.dashboard');
+        Route::match(['get', 'post'], '/admin/bpjs-simulator', [AdminToolsController::class, 'bpjsSimulator'])
+            ->name('admin.bpjs.simulator');
+        Route::match(['get', 'post'], '/admin/fhir-gateway', [AdminToolsController::class, 'fhirExplorer'])
+            ->name('admin.fhir.explorer');
         Route::get('/admin/webhooks', [WebhookController::class, 'index'])->name('admin.webhooks.index');
         Route::post('/admin/webhooks', [WebhookController::class, 'store'])->name('admin.webhooks.store');
         Route::put('/admin/webhooks/{webhookEndpoint}', [WebhookController::class, 'update'])

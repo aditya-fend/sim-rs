@@ -154,3 +154,31 @@ it('is wired into the Patient model as the cast for all three sensitive columns'
         ->and($casts['address_encrypted'])->toBe(EncryptedGcm::class)
         ->and(is_subclass_of(Patient::class, Model::class))->toBeTrue();
 });
+
+/**
+ * NFR-02 — field-level encryption and decryption overhead must stay under
+ * 25 ms per record read/write. The cast is on the hot path of every clinical
+ * field, so the budget is asserted rather than assumed.
+ *
+ * ponytail: a wall-clock assertion on shared CI hardware is a smoke check, not
+ * a benchmark. If it ever goes flaky, swap it for a dedicated benchmark run
+ * rather than deleting the requirement.
+ */
+it('stays inside the NFR-02 budget of 25 ms per encrypt/decrypt pair', function (): void {
+    $cast = encryptedGcmCast();
+    $value = 'Nyeri ulu hati sejak dua hari, disertai mual dan anorexia.';
+
+    sealedValue($cast, $value); // warm the key and the cast's first allocation
+
+    $iterations = 200;
+    $started = hrtime(true);
+
+    for ($i = 0; $i < $iterations; $i++) {
+        [$sealed] = sealedValue($cast, $value);
+        $cast->get(new Patient, 'field', $sealed, []);
+    }
+
+    $perOperationMs = (hrtime(true) - $started) / 1e6 / $iterations;
+
+    expect($perOperationMs)->toBeLessThan(25.0);
+})->skipOnWindows();

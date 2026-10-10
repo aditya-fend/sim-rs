@@ -32,7 +32,7 @@ RUN { \
         echo 'opcache.enable_cli=1'; \
         echo 'opcache.memory_consumption=192'; \
         echo 'opcache.max_accelerated_files=20000'; \
-        echo 'opcache.validate_timestamps=0'; \
+        echo 'opcache.validate_timestamps=1'; \
     } > /usr/local/etc/php/conf.d/opcache.ini
 
 # ext-redis drives the Redis session/cache/queue stores named in tech-stack.md.

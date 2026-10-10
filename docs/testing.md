@@ -147,3 +147,24 @@ callers at 250 ms each is 200 requests per second. The interoperability
 gateways therefore have their own limiter, keyed by the presented credential
 rather than by source address — a gateway caller has no session to key on, so
 keying by IP would put every hospital behind one NAT into a single bucket.
+
+## NFR coverage added during implementation
+
+Three requirements had no automated check. Each now has one:
+
+| NFR | Target | Check | Result |
+| :--- | :--- | :--- | :--- |
+| NFR-01 | FCP < 1.2 s, TTI < 1.8 s | `tests/Browser/FrontendPerformanceTest.php` reads Chrome's own Paint Timing | pass |
+| NFR-02 | Encryption overhead < 25 ms/record | wall-clock assertion in `tests/Unit/EncryptedGcmTest.php` | pass |
+| NFR-07 | WCAG 2.1 AA | axe-core (WCAG2A + WCAG2AA tags) across login, nurse intake, audit console and the schema manager, in `tests/Browser/AccessibilityTest.php` | pass |
+
+Only axe violations marked *serious* or *critical* fail the run; the moderate
+and minor rules are advisory and would make the gate noise rather than signal.
+
+Running axe immediately found a real defect: `--color-warning-600` was
+`#d97706`, which is 3.19:1 on white and below the 4.5:1 WCAG AA threshold for
+body text. Darkened to `#b45309` (5.02:1 on white, 4.84:1 on `warning-50`).
+
+`axe-core` is a devDependency and is injected straight from `node_modules` at
+test time, so nothing is vendored into `public/` and there is no build artefact
+to keep in sync.

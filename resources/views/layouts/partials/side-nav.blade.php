@@ -27,6 +27,11 @@
             'active' => 'compliance.audit.*',
         ] : null,
         $user?->can('manage', App\Models\WebhookEndpoint::class) ? [
+            'label' => 'Administrasi',
+            'href' => route('admin.dashboard'),
+            'active' => ['admin.dashboard', 'admin.bpjs.*', 'admin.fhir.*'],
+        ] : null,
+        $user?->can('manage', App\Models\WebhookEndpoint::class) ? [
             'label' => 'Endpoint Webhook',
             'href' => route('admin.webhooks.index'),
             'active' => 'admin.webhooks.*',
