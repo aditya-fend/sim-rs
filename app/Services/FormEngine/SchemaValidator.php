@@ -47,7 +47,10 @@ final class SchemaValidator
             return ['Schema harus memiliki minimal satu section.'];
         }
 
-        $seen = [];
+        // Section keys and field names live in separate namespaces: a section
+        // legitimately called `pediatric_dosage` holds a field of the same name.
+        $seenSections = [];
+        $seenFields = [];
 
         foreach ($sections as $index => $section) {
             if (! is_array($section)) {
@@ -63,12 +66,14 @@ final class SchemaValidator
                 continue;
             }
 
-            if (isset($seen[$key])) {
+            if (isset($seenSections[$key])) {
                 $errors[] = "Section key '{$key}' duplikat.";
             }
-            $seen[$key] = true;
+            $seenSections[$key] = true;
 
-            foreach ($this->validateFields(is_array($section['fields'] ?? null) ? $section['fields'] : [], $key, $seen) as $error) {
+            $fields = $section['fields'] ?? null;
+
+            foreach ($this->validateFields(is_array($fields) ? $fields : [], $key, $seenFields) as $error) {
                 $errors[] = $error;
             }
         }

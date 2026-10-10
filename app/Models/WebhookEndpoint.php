@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedGcm;
 use App\Models\Concerns\HasUuidKey;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A hospital enterprise subscriber (api-spec.md §Webhooks). The secret is
- * stored as a SHA-256 digest; the plaintext is shown once at registration.
+ * A hospital enterprise subscriber (api-spec.md §Webhooks). The shared secret
+ * is encrypted at rest because outbound bodies must be signed with it.
  *
  * @property string $id
  * @property string $url
+ * @property string $secret_encrypted
  * @property list<string> $events
  * @property bool $is_active
  */
@@ -35,7 +37,7 @@ class WebhookEndpoint extends Model
     protected $fillable = [
         'label',
         'url',
-        'secret_hash',
+        'secret_encrypted',
         'events',
         'is_active',
     ];
@@ -48,6 +50,7 @@ class WebhookEndpoint extends Model
         return [
             'events' => 'array',
             'is_active' => 'boolean',
+            'secret_encrypted' => EncryptedGcm::class,
         ];
     }
 
@@ -56,9 +59,10 @@ class WebhookEndpoint extends Model
         return $this->is_active && in_array($event, $this->events, true);
     }
 
-    public static function hashSecret(string $plaintext): string
+    /** The plaintext shared secret, decrypted for outbound signing only. */
+    public function secret(): string
     {
-        return hash('sha256', $plaintext);
+        return $this->secret_encrypted;
     }
 
     /** @return list<string> */

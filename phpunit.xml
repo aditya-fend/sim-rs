@@ -40,10 +40,14 @@
         <!-- erd.md leans on Postgres-only features (partial unique index on
              form_templates, regex check constraints, RAISE triggers), so the
              suite runs against the real engine rather than SQLite. -->
-        <env name="DB_CONNECTION" value="pgsql"/>
-        <env name="DB_DATABASE" value="klinikform_test"/>
-        <env name="DB_USERNAME" value="simrs"/>
-        <env name="DB_PASSWORD" value="simrs_secret"/>
+        <!-- Written to $_SERVER, not getenv(): Laravel's env repository reads
+             $_SERVER first, and docker compose already exports DB_* into the
+             container. Using <env> here would silently leave the suite pointed
+             at the development database. -->
+        <server name="DB_CONNECTION" value="pgsql" force="true"/>
+        <server name="DB_DATABASE" value="klinikform_test" force="true"/>
+        <server name="DB_USERNAME" value="simrs" force="true"/>
+        <server name="DB_PASSWORD" value="simrs_secret" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

@@ -29,6 +29,12 @@ final class ConditionalDisplay
             return true;
         }
 
+        // A hand-edited schema can carry anything here; fail closed rather
+        // than throwing, so one bad field cannot take down the whole form.
+        if (! is_array($condition)) {
+            return false;
+        }
+
         $conditions = array_is_list($condition) ? $condition : [$condition];
 
         foreach ($conditions as $single) {

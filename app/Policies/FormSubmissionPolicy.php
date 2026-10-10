@@ -47,12 +47,16 @@ class FormSubmissionPolicy
     }
 
     /**
-     * FR-11 / AC-08. A submission may be signed exactly once, by a DPJP.
-     * Re-signing returns false so the controller can answer 409 (api-spec.md).
+     * FR-11 / AC-08. Sign-off is DPJP-only, so a nurse cannot escalate to a doctor.
+     *
+     * This checks the *role* only. Whether the record is still signable is state,
+     * not permission, and api-spec.md gives the two different statuses: 403 for a
+     * user who may not sign, 409 for a record that is already LOCKED. Folding both
+     * into one false here would answer 403 for an ordinary double-submit.
      */
     public function sign(User $user, FormSubmission $submission): bool
     {
-        return $this->isDpjp($user) && ! $submission->isLocked();
+        return $this->isDpjp($user);
     }
 
     /**

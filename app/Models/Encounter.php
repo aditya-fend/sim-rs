@@ -46,9 +46,13 @@ class Encounter extends Model
 
     protected $fillable = [
         'encounter_number',
+        'patient_id',
+        'dpjp_user_id',
         'encounter_type',
         'status',
         'service_unit',
+        'admission_time',
+        'discharge_time',
         'satusehat_encounter_id',
         'satusehat_sync_status',
     ];

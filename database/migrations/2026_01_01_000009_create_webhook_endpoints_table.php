@@ -17,8 +17,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('label', 100);
             $table->string('url', 500);
-            // Stored hashed; the plaintext is shown once at registration.
-            $table->string('secret_hash', 64);
+            // Encrypted at rest: signing an outbound body needs the plaintext
+            // shared secret, so a digest would be useless here. The plaintext
+            // is revealed once at registration and never displayed again.
+            $table->text('secret_encrypted');
             $table->jsonb('events');
             $table->boolean('is_active')->default(true);
             $table->timestampsTz();
