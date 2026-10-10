@@ -53,6 +53,13 @@
 
                         @foreach ($regions as $region)
                             @php
+                                // `back` covers the whole posterior torso, so
+                                // drawing it on the anterior figure too would
+                                // make every anterior click ambiguous.
+                                if (($region['id'] === 'back') !== ($view === 'posterior')) {
+                                    continue;
+                                }
+
                                 // Region geometry is derived from the region id
                                 // so the map stays a single source of truth.
                                 $box = \App\Services\Clinical\BodyMap::boxFor((string) $region['id']);

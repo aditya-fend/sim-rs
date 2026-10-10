@@ -21,23 +21,30 @@ final class BodyMap
      * The silhouette spans y=7..158 for a 100x200 viewBox: head at the top,
      * torso through the middle, legs below.
      *
+     * The abdomen is split into three side-by-side bands rather than nested
+     * rectangles: an overlapping box silently wins in `regionAt()`, so a click
+     * on the right upper quadrant would otherwise be recorded as the midline.
+     *
      * @var array<string, array{0: float, 1: float, 2: float, 3: float}>
      */
     private const REGIONS = [
         'head' => [41.0, 8.0, 18.0, 20.0],
         'neck' => [43.0, 28.0, 14.0, 10.0],
         'chest' => [37.0, 38.0, 26.0, 26.0],
-        'epigastrium' => [40.0, 64.0, 20.0, 14.0],
-        'right_upper_quadrant' => [37.0, 64.0, 15.0, 16.0],
-        'left_upper_quadrant' => [48.0, 64.0, 15.0, 16.0],
-        'periumbilical' => [42.0, 78.0, 16.0, 14.0],
-        'right_lower_quadrant' => [37.0, 78.0, 15.0, 16.0],
-        'left_lower_quadrant' => [48.0, 78.0, 15.0, 16.0],
-        'back' => [37.0, 38.0, 26.0, 60.0],
+        'right_upper_quadrant' => [37.0, 64.0, 9.0, 16.0],
+        'epigastrium' => [46.0, 64.0, 8.0, 14.0],
+        'left_upper_quadrant' => [54.0, 64.0, 9.0, 16.0],
+        'right_lower_quadrant' => [37.0, 80.0, 9.0, 14.0],
+        'periumbilical' => [46.0, 80.0, 8.0, 12.0],
+        'left_lower_quadrant' => [54.0, 80.0, 9.0, 14.0],
         'right_arm' => [22.0, 40.0, 14.0, 58.0],
         'left_arm' => [64.0, 40.0, 14.0, 58.0],
         'right_leg' => [38.0, 100.0, 12.0, 58.0],
         'left_leg' => [50.0, 100.0, 12.0, 58.0],
+        // Declared last on purpose: it covers the whole posterior torso, so it
+        // must only win where no anterior region claims the point. The canvas
+        // draws it on the posterior figure alone.
+        'back' => [37.0, 38.0, 26.0, 60.0],
     ];
 
     /**

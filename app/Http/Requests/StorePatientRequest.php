@@ -46,6 +46,11 @@ class StorePatientRequest extends FormRequest
         return [
             'nik.regex' => 'NIK harus terdiri dari 16 digit angka.',
             'bpjs_card_number.regex' => 'Nomor kartu BPJS harus terdiri dari 13 digit angka.',
+            // Laravel's default would read "The nomor rekam medis has already
+            // been taken." — English wrapped around an Indonesian field name.
+            'medical_record_number.unique' => 'Nomor rekam medis sudah digunakan.',
+            'ihs_patient_id.unique' => 'Pasien dengan IHS ID ini sudah terdaftar.',
+            'birth_date.before' => 'Tanggal lahir tidak boleh di masa depan.',
         ];
     }
 
@@ -64,7 +69,10 @@ class StorePatientRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('create', $this->route('patient')) ?? false;
+        // The store route carries no {patient} parameter, so the policy is
+        // asked about the class; passing $this->route('patient') here would
+        // hand it null and refuse every registration.
+        return $this->user()?->can('create', Patient::class) ?? false;
     }
 
     /**

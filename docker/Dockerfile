@@ -31,10 +31,10 @@ RUN savedAptMark="$(apt-mark showmanual)"; \
         $PHPIZE_DEPS \
         libz-dev \
     ; \
-    pecl install redis && docker-php-ext-enable redis; \
+    pecl install redis pcov && docker-php-ext-enable redis pcov; \
     apt-mark auto '.*' > /dev/null; \
     apt-mark manual $savedAptMark > /dev/null; \
-    ldd "$(php -r 'echo ini_get("extension_dir");')/redis.so" | awk '/= not found/ {print}'; \
+    ldd "$(php -r 'echo ini_get("extension_dir");')"/{redis,pcov}.so | awk '/= not found/ {print}'; \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
     rm -rf /var/lib/apt/lists/*
 
