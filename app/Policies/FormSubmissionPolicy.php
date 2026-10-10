@@ -22,6 +22,14 @@ class FormSubmissionPolicy
 {
     use ChecksRoles;
 
+    /**
+     * Class-scope ability — see FormTemplatePolicy::manage().
+     */
+    public function createAny(User $user): bool
+    {
+        return $this->create($user);
+    }
+
     public function viewAny(User $user): bool
     {
         return $this->hasRole($user, ...RoleSeeder::ALL);

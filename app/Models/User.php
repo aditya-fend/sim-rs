@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedGcm;
 use App\Models\Concerns\HasUuidKey;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,7 +22,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $name
  * @property string $email
  * @property string|null $sip_number
- * @property string|null $two_factor_secret_confirmed_at
+ * @property string|null $two_factor_secret
+ * @property CarbonInterface|null $two_factor_secret_confirmed_at
+ * @property string|null $two_factor_recovery_codes
  *
 
  * @use HasFactory<UserFactory>
@@ -44,6 +48,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
         'two_factor_recovery_codes',
     ];
 
@@ -54,6 +59,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'two_factor_secret' => EncryptedGcm::class,
             'two_factor_secret_confirmed_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

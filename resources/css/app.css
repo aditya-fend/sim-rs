@@ -110,7 +110,10 @@
 
 @layer components {
     /* ui-spec.md "Interaction & Motion States" — single source of truth for the
-       seven form-control states so Blade and Alpine never drift. */
+       seven form-control states so Blade and Alpine never drift.
+       Tailwind 4's @apply only accepts real utilities, so the shared button
+       base is repeated rather than composed through a .btn class. */
+
     .field {
         @apply w-full rounded-md border border-border-subtle bg-surface-base px-4 py-2
                text-body-md text-text-primary transition-colors duration-150
@@ -135,15 +138,21 @@
     }
 
     .btn-primary {
-        @apply btn bg-brand-600 text-white hover:bg-brand-700;
+        @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2
+               bg-brand-600 text-body-md font-semibold text-white transition-colors duration-150
+               hover:bg-brand-700;
     }
 
     .btn-danger {
-        @apply btn bg-danger-600 text-white hover:bg-red-700;
+        @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2
+               bg-danger-600 text-body-md font-semibold text-white transition-colors duration-150
+               hover:bg-red-700;
     }
 
     .btn-secondary {
-        @apply btn border border-border-strong bg-surface-base text-text-secondary hover:bg-surface-subtle;
+        @apply inline-flex items-center justify-center gap-2 rounded-md border border-border-strong
+               bg-surface-base px-4 py-2 text-body-md font-semibold text-text-secondary
+               transition-colors duration-150 hover:bg-surface-subtle;
     }
 
     .card {
@@ -154,7 +163,8 @@
         @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-caption;
     }
 
-    /* ui-spec.md copy_and_microcopy — single source for triage colour + label. */
+    /* ui-spec.md copy_and_microcopy — the ATS colour always ships with its
+       label, so colour is never the sole carrier of meaning. */
     .triage-resus {
         @apply bg-triage-resus text-white;
     }

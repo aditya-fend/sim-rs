@@ -32,9 +32,12 @@
         </exclude>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
+        <!-- <server>, not <env>: the container image exports APP_ENV=local
+             into $_SERVER, which Laravel reads ahead of getenv()/$_ENV, so an
+             <env> entry here would be silently overridden. -->
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <server name="BCRYPT_ROUNDS" value="4" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <!-- erd.md leans on Postgres-only features (partial unique index on
@@ -48,7 +51,7 @@
         <server name="DB_DATABASE" value="klinikform_test" force="true"/>
         <server name="DB_USERNAME" value="simrs" force="true"/>
         <server name="DB_PASSWORD" value="simrs_secret" force="true"/>
-        <env name="MAIL_MAILER" value="array"/>
+        <server name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

@@ -64,7 +64,7 @@ class StorePatientRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Patient::class) ?? false;
+        return $this->user()?->can('create', $this->route('patient')) ?? false;
     }
 
     /**

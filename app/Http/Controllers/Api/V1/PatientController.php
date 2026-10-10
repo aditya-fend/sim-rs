@@ -82,6 +82,9 @@ class PatientController extends Controller
             'bpjs_card_number' => $patient->bpjs_card_number,
             'ihs_patient_id' => $patient->ihs_patient_id,
             'age_years' => $patient->ageInYears(),
+            // An intake form hangs off an encounter, so the lookup hands the
+            // nurse the open one if there is one.
+            'open_encounter_id' => $patient->encounters()->open()->latest('admission_time')->value('id'),
         ];
     }
 }

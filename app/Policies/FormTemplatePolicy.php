@@ -16,6 +16,16 @@ class FormTemplatePolicy
 {
     use ChecksRoles;
 
+    /**
+     * Class-scope ability. `$user->can('update', FormTemplate::class)` has no
+     * instance to hand the policy, so gates that ask "may this role touch
+     * schemas at all?" resolve here instead.
+     */
+    public function manage(User $user): bool
+    {
+        return $this->isAdmin($user);
+    }
+
     public function viewAny(User $user): bool
     {
         return $this->hasRole($user, ...RoleSeeder::ALL);

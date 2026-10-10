@@ -22,7 +22,11 @@ return new class extends Migration
             $table->string('sip_number')->nullable();
             $table->char('nik_hash', 64)->nullable();
             $table->string('ihs_practitioner_id')->nullable()->unique();
+            // AES-256-GCM ciphertext: a TOTP secret is a shared secret, and
+            // losing it means re-enrolling the account.
+            $table->text('two_factor_secret')->nullable();
             $table->timestamp('two_factor_secret_confirmed_at')->nullable();
+            // Bcrypt hashes of single-use recovery codes.
             $table->text('two_factor_recovery_codes')->nullable();
             $table->rememberToken();
             $table->timestamps();

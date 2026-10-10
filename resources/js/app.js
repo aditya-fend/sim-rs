@@ -1,6 +1,5 @@
 import Alpine from 'alpinejs';
 import {
-    registerDraftStore,
     registerGcsCalculator,
     registerPainCanvas,
     registerFormEngine,
@@ -43,7 +42,6 @@ registerGcsCalculator(Alpine);
 registerDosageCalculator(Alpine);
 registerPainCanvas(Alpine);
 registerFormEngine(Alpine);
-registerDraftStore(Alpine);
 
 window.Alpine = Alpine;
 Alpine.start();

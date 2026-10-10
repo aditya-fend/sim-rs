@@ -7,13 +7,18 @@ use App\Http\Middleware\EnsureIdempotencyKey;
 use App\Support\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -29,6 +34,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'bpjs.signature' => BpjsSignatureAuth::class,
             'fhir.token' => EnsureFhirBearerToken::class,
             'idempotency' => EnsureIdempotencyKey::class,
+        ]);
+
+        // Laravel's `api` group is stateless, but api-spec.md §Conventions puts
+        // the internal clinical endpoints behind an authenticated session with
+        // CSRF validation. The interoperability routes ignore these; they
+        // authenticate by bearer token and HMAC respectively.
+        $middleware->api(prepend: [
+            EncryptCookies::class,
+            StartSession::class,
+            ShareErrorsFromSession::class,
+            ValidateCsrfToken::class,
+            SubstituteBindings::class,
         ]);
 
         // Session cookies are HttpOnly, Secure and SameSite=Strict per
