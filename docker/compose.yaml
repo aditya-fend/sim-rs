@@ -37,7 +37,17 @@ services:
       target: base
     environment:
       <<: *app-env
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    # --no-reload stops the watcher forking a second server on .env changes,
+    # and PHP_CLI_SERVER_WORKERS (from the image) forks the workers a browser
+    # needs: it opens several connections at once for CSS, JS and favicon, and
+    # a single-worker built-in server closes the extras.
+    command:
+      - php
+      - artisan
+      - serve
+      - --host=0.0.0.0
+      - --port=8000
+      - --no-reload
     ports:
       - "8000:8000"
 
@@ -51,8 +61,11 @@ services:
     environment:
       <<: *app-env
       APP_URL: http://nginx
-      DUSK_DRIVER_URL: /usr/bin/chromedriver
-    command: sleep infinity
+      # Dusk expects a URL, not a binary path: with this set it connects to an
+      # already-running driver instead of spawning its own (the bundled binary
+      # is downloaded per Chrome version and drifts from the installed browser).
+      DUSK_DRIVER_URL: http://127.0.0.1:9515
+    command: sh -c "chromedriver --port=9515 & exec sleep infinity"
 
   nginx:
     image: nginx:1.27-alpine

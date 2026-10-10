@@ -8,7 +8,8 @@
 
 @section('content')
 <div class="mx-auto max-w-[1600px]"
-     x-data="assessmentForm(@js($unlocked?->id), @js(route('api.v1.assessments.sign', ['submission' => $unlocked?->id ?? 'x'])))"
+     x-data="assessmentForm(@js($unlocked?->id), @js($signEndpoint))"
+     x-on:icd10-selected="selectedCode = $event.detail.code"
      x-cloak>
 
     <header class="mb-6">
@@ -109,7 +110,7 @@
                             Diagnosis Utama (ICD-10)
                         </label>
                         {{-- c-icd10-picker: searchable select with all five states. --}}
-                        <div x-data="{ open: false, q: '', code: '', search() {
+                        <div x-data="{ open: false, q: '', search() {
                                 const q = this.q.toLowerCase();
                                 return Object.entries(@js($icd10)).filter(([c, d]) =>
                                     c.toLowerCase().includes(q) || d.toLowerCase().includes(q)).slice(0, 8);
@@ -121,7 +122,12 @@
                             <ul x-show="open" x-cloak id="icd10-listbox" role="listbox"
                                 class="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-md border border-border-subtle bg-surface-base shadow-high">
                                 <template x-for="[code, description] in search()" :key="code">
-                                    <li role="option" @mousedown.prevent="selectedCode = code; open = false; q = code"
+                                    <li role="option"
+                                        {{-- $parent would write onto the inner
+                                             picker scope, which does not own
+                                             selectedCode; the event bubbles to
+                                             the assessmentForm component. --}}
+                                        @mousedown.prevent="q = code; open = false; $dispatch('icd10-selected', { code })"
                                         class="cursor-pointer px-3 py-2 text-body-sm hover:bg-surface-subtle">
                                         <span class="font-mono-sm" x-text="code"></span>
                                         <span class="text-text-muted" x-text="description"></span>
@@ -152,7 +158,7 @@
                         </p>
                     </div>
 
-                    <button type="submit" class="btn-danger w-full" x-bind:disabled="signing || !selectedCode">
+                    <button type="submit" id="assessment-sign" class="btn-danger w-full" x-bind:disabled="signing || !selectedCode">
                         <span x-show="!signing">{{ 'Tandatangani & Kunci Permanen' }}</span>
                         <span x-show="signing">Menandatangani…</span>
                     </button>
@@ -165,71 +171,24 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('assessmentForm', (submissionId, endpoint) => ({
-            submissionId,
-            endpoint,
-            selectedCode: '',
-            objective_findings: '',
-            errors: {},
-            signing: false,
+// Submission outcomes are announced through the shared status region.
+window.addEventListener('klinikform:toast', (event) => {
+    const { tone, message } = event.detail;
+    const region = document.getElementById('toast-region');
+    if (!region) return;
 
-            async submit() {
-                if (!this.submissionId) return;
+    const el = document.createElement('div');
+    el.className = `pointer-events-auto rounded-md px-4 py-3 text-body-sm shadow-high ${
+        {
+            success: 'bg-success-50 text-success-700',
+            warning: 'bg-warning-50 text-warning-600',
+            error: 'bg-danger-50 text-danger-600',
+        }[tone] ?? ''
+    }`;
+    el.textContent = message;
+    region.appendChild(el);
 
-                this.signing = true;
-                this.errors = {};
-
-                try {
-                    const response = await fetch(
-                        this.endpoint.replace('{submission}', this.submissionId),
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                Accept: 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                            },
-                            body: JSON.stringify({
-                                primary_icd10_code: this.selectedCode,
-                                objective_findings: this.objective_findings,
-                            }),
-                        },
-                    );
-
-                    const body = await response.json();
-
-                    if (response.status === 422) {
-                        this.errors = body?.error?.details ?? {};
-                        return;
-                    }
-
-                    if (response.status === 409) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    if (!response.ok) {
-                        window.dispatchEvent(
-                            new CustomEvent('klinikform:toast', {
-                                detail: { tone: 'error', message: body?.error?.message ?? 'Penandatanganan gagal.' },
-                            }),
-                        );
-                        return;
-                    }
-
-                    window.location.reload();
-                } catch {
-                    window.dispatchEvent(
-                        new CustomEvent('klinikform:toast', {
-                            detail: { tone: 'warning', message: 'Koneksi terputus. Coba lagi.' },
-                        }),
-                    );
-                } finally {
-                    this.signing = false;
-                }
-            },
-        }));
-    });
+    setTimeout(() => el.remove(), 6000);
+});
 </script>
 @endpush

@@ -54,6 +54,12 @@ final class SubmissionService
         // whose conditional_display is currently false.
         $validated = $this->validator->validateAndReturn($template, $payload, $context);
 
+        // FR-10 / AC-05.1: payload_data is stored as plain JSON, so anything
+        // the schema marks confidential is lifted out here — once, for every
+        // caller — and folded into the AES-GCM encrypted column.
+        [$validated, $confidential] = $this->extractConfidential($template, $validated);
+        $anamnesis = $this->appendConfidential($anamnesis, $confidential);
+
         return DB::transaction(function () use ($encounter, $template, $validated, $author, $anamnesis, $request): FormSubmission {
             $submission = new FormSubmission([
                 'form_template_id' => $template->id,
@@ -85,6 +91,90 @@ final class SubmissionService
 
             return $submission;
         });
+    }
+
+    /**
+     * Pull every field the schema marks `confidential` out of the payload.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array{0: array<string, mixed>, 1: array<string, string>}
+     */
+    private function extractConfidential(FormTemplate $template, array $validated): array
+    {
+        $pulled = [];
+
+        foreach ($this->confidentialFieldNames($template) as $name) {
+            if (! array_key_exists($name, $validated)) {
+                continue;
+            }
+
+            $value = $validated[$name];
+            unset($validated[$name]);
+
+            if (is_scalar($value) && (string) $value !== '') {
+                $pulled[$name] = (string) $value;
+            }
+        }
+
+        return [$validated, $pulled];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function confidentialFieldNames(FormTemplate $template): array
+    {
+        $names = [];
+
+        $walk = function (array $nodes) use (&$walk, &$names): void {
+            foreach ($nodes as $node) {
+                if (! is_array($node)) {
+                    continue;
+                }
+
+                // The definition root yields its children as values, so a
+                // section/field list arrives here as the node itself.
+                if (array_is_list($node)) {
+                    $walk($node);
+
+                    continue;
+                }
+
+                if (($node['confidential'] ?? false) === true && isset($node['name'])) {
+                    $names[] = (string) $node['name'];
+                }
+
+                foreach (['sections', 'fields', 'sub_fields'] as $child) {
+                    if (is_array($node[$child] ?? null)) {
+                        $walk($node[$child]);
+                    }
+                }
+            }
+        };
+
+        $walk($template->schema_definition);
+
+        return $names;
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     */
+    private function appendConfidential(?string $anamnesis, array $fields): ?string
+    {
+        if ($fields === []) {
+            return $anamnesis;
+        }
+
+        $lines = [];
+
+        foreach ($fields as $name => $value) {
+            $lines[] = $name.': '.$value;
+        }
+
+        $merged = implode("\n", $lines);
+
+        return ($anamnesis === null || $anamnesis === '') ? $merged : $anamnesis."\n".$merged;
     }
 
     /**

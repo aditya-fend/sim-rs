@@ -24,7 +24,9 @@
 <div class="flex min-h-[calc(100vh-56px)]">
     @include('layouts.partials.side-nav')
 
-    <div class="flex min-w-0 flex-1 flex-col">
+    {{-- lg:pl-60 clears the fixed 240px side nav; without it the nav
+         overlays the clinical fields at desktop widths (ui-spec.md layout). --}}
+    <div class="flex min-w-0 flex-1 flex-col lg:pl-60">
         @yield('patient-strip')
 
         <main id="main-content" tabindex="-1" class="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-6">

@@ -56,7 +56,7 @@
                        placeholder="00-48-21" class="field font-mono-sm">
             </div>
             <div class="flex items-end gap-2">
-                <button type="submit" class="btn-primary flex-1">Terapkan</button>
+                <button type="submit" id="audit-filter-apply" class="btn-primary flex-1">Terapkan</button>
                 <a href="{{ route('compliance.audit.index') }}" class="btn-secondary">Reset</a>
             </div>
         </form>

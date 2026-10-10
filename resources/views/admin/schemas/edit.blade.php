@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="mx-auto max-w-[1600px]"
-     x-data="schemaEditor(@js($json), @js($template->id))"
+     x-data="schemaEditor(@js($json), @js($template->version), @js(route('admin.schemas.validate')), @js($template->name))"
      x-cloak>
 
     <header class="mb-6 flex flex-wrap items-center gap-3">
@@ -38,7 +38,7 @@
     <div class="grid gap-6 xl:grid-cols-12">
         <div class="xl:col-span-8">
             <form method="POST" action="{{ route('admin.schemas.publish', $template) }}"
-                  x-on:submit.prevent="publish()">
+                  x-on:submit.prevent="publish($event.target)">
                 @csrf
 
                 <div class="mb-4">
@@ -60,8 +60,8 @@
                 </label>
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <button type="button" class="btn-secondary" x-on:click="validate()">Uji Validasi Skema</button>
-                    <button type="submit" class="btn-primary" x-bind:disabled="publishing || !valid">
+                    <button type="button" id="schema-validate" class="btn-secondary" x-on:click="validate()">Uji Validasi Skema</button>
+                    <button type="submit" id="schema-publish" class="btn-primary" x-bind:disabled="publishing || !valid">
                         <span x-show="!publishing">Terbitkan Versi Baru</span>
                         <span x-show="publishing">Menerbitkan…</span>
                     </button>
@@ -115,55 +115,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('schemaEditor', (json, currentVersion) => ({
-            json,
-            baseline: json,
-            nextVersion: currentVersion + 1,
-            name: document.getElementById('name')?.value ?? '',
-            valid: false,
-            publishing: false,
-            errors: [],
-            newFields: [],
-            summary: null,
-
-            async validate() {
-                const response = await fetch('{{ route('admin.schemas.validate') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                    },
-                    body: JSON.stringify({
-                        schema_definition: this.json,
-                        baseline: this.baseline,
-                    }),
-                });
-
-                const body = await response.json();
-
-                this.valid = body.valid === true;
-                this.errors = body.errors ?? [];
-                this.newFields = body.new_fields ?? [];
-                this.summary = body.summary ?? (body.errors ?? ['JSON tidak valid.']).join(' ');
-            },
-
-            async publish() {
-                this.publishing = true;
-
-                try {
-                    const form = this.$root.querySelector('form');
-                    form.querySelector('#schema_definition').value = this.json;
-                    form.submit();
-                } finally {
-                    this.publishing = false;
-                }
-            },
-        }));
-    });
-</script>
-@endpush

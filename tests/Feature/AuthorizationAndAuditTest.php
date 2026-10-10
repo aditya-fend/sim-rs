@@ -9,7 +9,6 @@ use App\Services\Audit\AuditLogger;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 
 /**
  * testing.md IT-04 — POST sign-off as a Triage Nurse must be 403, and the

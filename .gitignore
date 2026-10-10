@@ -25,3 +25,9 @@ Thumbs.db
 
 # docker/.env pins the host uid/gid used by the compose stack; machine-specific.
 docker/.env
+
+# Dusk run artefacts
+/tests/Browser/source
+/tests/Browser/screenshots
+/tests/Browser/console/.gitattributes
+/tests/Browser/console/chromedriver-linux

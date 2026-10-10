@@ -20,7 +20,7 @@
 @endphp
 
 <fieldset class="card p-4"
-          x-data="gcsWidget(@js($value), @js($readonly))">
+          x-data="gcsWidget(@js($value), @js($readonly), payload)"
     <legend class="text-heading-sm">Skala Koma Glasgow (GCS)</legend>
 
     <div class="grid gap-4 sm:grid-cols-3">

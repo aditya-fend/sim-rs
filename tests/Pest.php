@@ -16,6 +16,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Tests\DuskTestCase;
 use Tests\TestCase;
 
 /*
@@ -32,6 +33,10 @@ use Tests\TestCase;
 
 uses(TestCase::class)->in('Unit');
 uses(TestCase::class, RefreshDatabase::class)->in('Feature');
+
+// Browser scenarios drive the real application server through Dusk, so they get
+// their own base class rather than the in-process HTTP test case.
+uses(DuskTestCase::class)->in('Browser');
 
 /**
  * Create a user holding the given KlinikForm role.

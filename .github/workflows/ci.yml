@@ -92,7 +92,9 @@ jobs:
         run: npm run build
 
       - name: Run test suite
-        run: vendor/bin/pest --coverage --min=90
+        # The Browser suite drives a real Chrome against a served app and runs
+        # in its own job below.
+        run: vendor/bin/pest --testsuite=Unit,Feature --coverage --min=90
         env:
           BLIND_INDEX_PEPPER: ci-pepper
           FAPI_TOKEN: ci-fapi-token
@@ -102,9 +104,57 @@ jobs:
           composer audit --no-interaction
           npm audit --audit-level=high
 
+  dusk:
+    name: End-to-end (Dusk)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pdo, pgsql, bcmath
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          npm ci
+          npm run build
+
+      - name: Install PostgreSQL and Redis
+        run: |
+          sudo systemctl start postgresql.service
+          sudo systemctl start redis-server.service
+
+      - name: Generate application key
+        run: php artisan key:generate --force
+        env:
+          BLIND_INDEX_PEPPER: ci-pepper
+          FAPI_TOKEN: ci-fapi-token
+
+      - name: Start Chrome driver
+        uses: php-webdriver/dusk-chrome-driver-action@v1
+
+      - name: Run browser tests
+        run: php artisan dusk
+        env:
+          APP_URL: http://127.0.0.1:8000
+          DB_HOST: 127.0.0.1
+          REDIS_HOST: 127.0.0.1
+          BLIND_INDEX_PEPPER: ci-pepper
+          FAPI_TOKEN: ci-fapi-token
+
   image:
     name: Build container image
-    needs: test
+    needs: [test, dusk]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:

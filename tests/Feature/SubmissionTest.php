@@ -96,6 +96,27 @@ it('encrypts the anamnesis so no plaintext reaches the column', function (): voi
         ->and(FormSubmission::query()->firstOrFail()->anamnesis())->toBe('Nyeri ulu hati sejak 2 hari yang lalu.');
 });
 
+it('lifts a confidential field out of payload_data into the encrypted column', function (): void {
+    // The portal posts the whole form as payload_data, so the confidential
+    // flag in the schema is the only thing stopping anamnesis_notes from
+    // being stored as plain JSON (FR-10, AC-05.1).
+    $this->actingAs($this->nurse)
+        ->postJson("/api/v1/encounters/{$this->encounter->id}/submissions", [
+            'form_template_code' => 'TRIAGE-ED-01',
+            'payload_data' => triagePayload(['anamnesis_notes' => 'Asidosis. Diabetes tipe 2.']),
+        ])
+        ->assertCreated();
+
+    $rawPayload = DB::table('form_submissions')->value('payload_data');
+    $rawAnamnesis = DB::table('form_submissions')->value('encrypted_anamnesis');
+
+    expect($rawPayload)->not->toContain('anamnesis_notes')
+        ->and($rawPayload)->not->toContain('Asidosis')
+        ->and($rawAnamnesis)->toStartWith('v1.')
+        ->and(FormSubmission::query()->firstOrFail()->payload_data)->not->toHaveKey('anamnesis_notes')
+        ->and(FormSubmission::query()->firstOrFail()->anamnesis())->toContain('Asidosis');
+});
+
 it('recomputes the GCS total server-side instead of trusting the client', function (): void {
     // A tampered client claims total 15 while its sub-scores sum to 12.
     $this->actingAs($this->nurse)

@@ -12,15 +12,28 @@
     $id = 'field-'.$name;
     $errorKey = $errors[$name] ?? null;
     $describedBy = $errorKey ? $id.'-error' : null;
-    // @attributes renders a key/value map as HTML attributes; {{ }} would
-    // htmlspecialchars() an array and throw.
-    $common = [
+    // Blade's bare @attributes only reads a variable named $attributes, and
+    // @attributes($var) is not compiled at all, so the attribute string is
+    // assembled here. Every value is schema-derived (a validated snake_case
+    // field name, a generated id, a fixed class list) — never user input.
+    $pairs = [
         'id' => $id,
         'name' => 'payload['.$name.']',
-        'disabled' => $readonly,
-        'aria-describedby' => $describedBy,
-        'class' => 'field '.($errorKey ? 'field-error' : '').($readonly ? ' field-readonly' : ''),
     ];
+
+    if ($describedBy !== null) {
+        $pairs['aria-describedby'] = $describedBy;
+    }
+
+    if ($readonly) {
+        $pairs['readonly'] = 'readonly';
+    }
+
+    $pairs['class'] = 'field '.($errorKey ? 'field-error' : '').($readonly ? ' field-readonly' : '');
+
+    $attributes = collect($pairs)
+        ->map(static fn (string $value, string $key): string => e($key).'="'.e($value).'"')
+        ->implode(' ');
 @endphp
 
 <div class="mb-4">
@@ -37,7 +50,7 @@
 
     @switch($field['type'])
         @case('number')
-            <input type="number" @attributes($common)
+            <input type="number" {!! $attributes !!}
                    @if (isset($field['min'])) min="{{ $field['min'] }}" @endif
                    @if (isset($field['max'])) max="{{ $field['max'] }}" @endif
                    step="{{ $field['step'] ?? 'any' }}"
@@ -46,21 +59,21 @@
             @break
 
         @case('textarea')
-            <textarea rows="4" @attributes($common)
+            <textarea rows="4" {!! $attributes !!}
                       @if ($readonly) readonly @endif
                          x-model="payload.{{ $name }}"></textarea>
             @break
 
         @case('date')
-            <input type="date" @attributes($common) x-model="payload.{{ $name }}">
+            <input type="date" {!! $attributes !!} x-model="payload.{{ $name }}">
             @break
 
         @case('datetime')
-            <input type="datetime-local" @attributes($common) x-model="payload.{{ $name }}">
+            <input type="datetime-local" {!! $attributes !!} x-model="payload.{{ $name }}">
             @break
 
         @case('select')
-            <select @attributes($common) x-model="payload.{{ $name }}">
+            <select {!! $attributes !!} x-model="payload.{{ $name }}">
                 <option value="">— Pilih —</option>
                 @foreach ($field['options'] ?? [] as $option)
                     <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
@@ -88,7 +101,7 @@
             @break
 
         @default
-            <input type="text" @attributes($common) x-model="payload.{{ $name }}"
+            <input type="text" {!! $attributes !!} x-model="payload.{{ $name }}"
                    @if ($readonly) readonly @endif
                    @if ($describedBy) aria-describedby="{{ $describedBy }}" @endif>
     @endswitch

@@ -63,7 +63,7 @@ it('returns the Encounter resource with every AC-06.1 element present', function
         ->assertJsonStructure([
             'identifier' => [['system', 'value']],
             'period' => ['start', 'end'],
-            'serviceType' => [['coding' => [['system', 'code', 'display']]]],
+            'serviceType' => ['coding' => [['system', 'code', 'display']]],
         ]);
 
     // ISO-8601 with a Z designator, per FR-17.

@@ -3,7 +3,11 @@
 @section('title', 'Intake Triase')
 
 @section('content')
-<div class="mx-auto max-w-[1600px]">
+{{-- The Alpine scope wraps the whole page: the lookup result panel and the
+     encounter table read `result`, so it cannot live on the form alone. --}}
+<div class="mx-auto max-w-[1600px]"
+     x-data="patientLookup({ initial: @js($initialQuery) })"
+     x-cloak>
 
     <header class="mb-6">
         <h1 class="text-display-lg">Intake Triase Gawat Darurat</h1>
@@ -15,7 +19,7 @@
     {{-- Patient lookup: the keyboard entry point for the whole portal
          (ui-spec.md §Accessibility, keyboard order). --}}
     <form class="card mb-6 flex flex-wrap items-end gap-3 p-4" role="search"
-          x-data="patientLookup" x-cloak>
+          @submit.prevent="search()">
         <div class="min-w-56 flex-1">
             <label for="nik" class="mb-1 block text-caption text-text-secondary">Nomor Induk Kependudukan (NIK)</label>
             <input id="nik" type="text" inputmode="numeric" maxlength="19" autocomplete="off"
@@ -104,95 +108,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('patientLookup', () => ({
-            nik: @json($initialQuery),
-            loading: false,
-            error: null,
-            result: null,
-
-            get formUrl() {
-                return `/portal/nurse/intake/${this.result.open_encounter_id}`;
-            },
-
-            async search() {
-                this.error = null;
-                this.result = null;
-
-                const value = this.nik.replace(/\D/g, '');
-
-                if (value.length !== 16) {
-                    this.error = 'NIK harus terdiri dari 16 digit angka.';
-                    return;
-                }
-
-                this.loading = true;
-
-                try {
-                    const response = await fetch(
-                        `/api/v1/patients/search?nik=${value}`,
-                        { headers: { Accept: 'application/json' } },
-                    );
-
-                    const body = await response.json();
-
-                    if (response.status === 404) {
-                        this.error = 'Pasien dengan NIK tersebut tidak ditemukan.';
-                        return;
-                    }
-
-                    if (!response.ok) {
-                        this.error = body?.error?.message ?? 'Pencarian gagal.';
-                        return;
-                    }
-
-                    this.result = body.data;
-                } catch {
-                    this.error = 'Koneksi terputus. Periksa jaringan intranet.';
-                } finally {
-                    this.loading = false;
-                }
-            },
-
-            // A patient with no open visit still needs an encounter before the
-            // intake form can be opened.
-            async createEncounter() {
-                this.error = null;
-                this.loading = true;
-
-                try {
-                    const response = await fetch('/api/v1/encounters', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Accept: 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                        },
-                        body: JSON.stringify({
-                            patient_id: this.result.id,
-                            encounter_type: 'EMER',
-                            service_unit: 'IGD',
-                        }),
-                    });
-
-                    const body = await response.json();
-
-                    if (!response.ok) {
-                        this.error = body?.error?.message ?? 'Kunjungan gagal dibuat.';
-                        return;
-                    }
-
-                    window.location.assign(`/portal/nurse/intake/${body.data.id}`);
-                } catch {
-                    this.error = 'Koneksi terputus. Periksa jaringan intranet.';
-                } finally {
-                    this.loading = false;
-                }
-            },
-        }));
-    });
-</script>
-@endpush

@@ -81,7 +81,7 @@ class FhirGatewayController extends Controller
             'subject.reference' => ['required', 'string', 'max:128'],
             'period.start' => ['required', 'date'],
             'period.end' => ['nullable', 'date', 'after_or_equal:period.start'],
-            'serviceType.0.coding.0.display' => ['nullable', 'string', 'max:128'],
+            'serviceType.coding.0.display' => ['nullable', 'string', 'max:128'],
         ]);
 
         $patientRef = (string) $validated['subject']['reference'];
@@ -111,7 +111,7 @@ class FhirGatewayController extends Controller
                 'patient_id' => $patient->id,
                 'encounter_type' => $validated['class']['code'],
                 'status' => $validated['status'],
-                'service_unit' => (string) (($validated['serviceType'][0]['coding'][0]['display'] ?? 'IGD')),
+                'service_unit' => (string) (($validated['serviceType']['coding'][0]['display'] ?? 'IGD')),
                 'admission_time' => $period['start'],
                 'discharge_time' => $period['end'] ?? null,
             ]);

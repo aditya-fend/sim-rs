@@ -93,14 +93,14 @@ final class FhirTransformer
             'period' => [
                 'start' => $encounter->admission_time->toIso8601ZuluString(),
             ],
+            // Encounter.serviceType is 0..1 CodeableConcept in R4. The
+            // array-valued sibling is `type`.
             'serviceType' => [
-                [
-                    'coding' => [
-                        [
-                            'system' => (string) Config::get('klinikform.fhir.icd10_system'),
-                            'code' => $encounter->encounter_type->fhirClassCode(),
-                            'display' => $encounter->encounter_type->label(),
-                        ],
+                'coding' => [
+                    [
+                        'system' => (string) Config::get('klinikform.fhir.icd10_system'),
+                        'code' => $encounter->encounter_type->fhirClassCode(),
+                        'display' => $encounter->encounter_type->label(),
                     ],
                 ],
             ],

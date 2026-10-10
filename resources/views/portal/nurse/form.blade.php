@@ -15,7 +15,9 @@
         endpoint: @js($submissionEndpoint),
         draftEndpoint: @js($draftEndpoint),
         draftKey: @js('draft_'.$encounter->id.'_'.$template->id),
-        initial: @js(old('payload_data', $draft?->draft_payload ?? [])),
+        {{-- Cast: an empty PHP list would arrive as [], and a payload that is
+             an Array serialises to [] instead of the field map the API expects. --}}
+        initial: @js((object) old('payload_data', $draft?->draft_payload ?? [])),
         localIntervalSeconds: @js(config('klinikform.drafts.local_storage_interval_seconds')),
         serverIntervalSeconds: @js(config('klinikform.drafts.server_sync_seconds')),
      })"
@@ -34,7 +36,7 @@
                 {{ 'Pulihkan data?' }}
             </p>
             <div class="mt-3 flex gap-2">
-                <button type="button" class="btn-primary" x-on:click="restore()">
+                <button type="button" id="draft-restore" class="btn-primary" x-on:click="restore()">
                     {{ 'Pulihkan Draf' }}
                 </button>
                 <button type="button" class="btn-secondary" x-on:click="discard()">
@@ -119,7 +121,7 @@
                         + <kbd class="rounded border border-border-subtle px-1">Enter</kbd> untuk menyimpan.
                     </p>
 
-                    <button type="submit" class="btn-primary ml-auto" x-bind:disabled="submitting">
+                    <button type="submit" id="intake-submit" class="btn-primary ml-auto" x-bind:disabled="submitting">
                         <span x-show="!submitting">Simpan Triase</span>
                         <span x-show="submitting">Menyimpan…</span>
                     </button>
@@ -180,7 +182,7 @@
     });
 
     // Toast host for submission outcomes.
-    document.addEventListener('klinikform:toast', (event) => {
+    window.addEventListener('klinikform:toast', (event) => {
         const { tone, message } = event.detail;
         const region = document.getElementById('toast-region');
         if (!region) return;

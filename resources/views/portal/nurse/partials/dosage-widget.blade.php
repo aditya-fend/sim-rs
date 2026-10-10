@@ -7,7 +7,7 @@
 --}}
 @props(['name' => 'pediatric_dosage', 'rules' => [], 'weightField' => 'weight_kg'])
 
-<fieldset class="card p-4" x-data="dosageWidget(@js($rules), @js($weightField))">
+<fieldset class="card p-4" x-data="dosageWidget(@js($rules), @js($weightField), payload)">
     <legend class="text-heading-sm">Perhitungan Dosis Obat Pediatrik</legend>
 
     @if ($rules === [])

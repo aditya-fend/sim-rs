@@ -26,13 +26,35 @@ export function gcsBand(total) {
 }
 
 export function registerGcsCalculator(Alpine) {
-    Alpine.data('gcsWidget', (initial = {}, readonly = false) => ({
+    Alpine.data('gcsWidget', (initial = {}, readonly = false, target = null) => ({
         parts: {
             eye: initial.eye ?? null,
             verbal: initial.verbal ?? null,
             motor: initial.motor ?? null,
         },
         readonly,
+        // The submit path POSTs the root payload directly rather than the form,
+        // so the widget owns its state but must publish it upward. See sync().
+        target,
+
+        init() {
+            if (!this.target) return;
+            this.$watch('parts', () => this.sync());
+            this.sync();
+        },
+
+        // total and category are sent because the schema validates them, but
+        // the server does not trust them: GcsCalculator recomputes both from
+        // the raw parts before they are stored.
+        sync() {
+            this.target.gcs = {
+                eye: this.parts.eye === null ? null : Number(this.parts.eye),
+                verbal: this.parts.verbal === null ? null : Number(this.parts.verbal),
+                motor: this.parts.motor === null ? null : Number(this.parts.motor),
+                total: this.total,
+                category: this.category,
+            };
+        },
 
         get complete() {
             return [this.parts.eye, this.parts.verbal, this.parts.motor].every(
@@ -60,15 +82,43 @@ export function registerGcsCalculator(Alpine) {
 /* -------------------------------------------------------------------------- */
 
 export function registerDosageCalculator(Alpine) {
-    Alpine.data('dosageWidget', (rules = [], weightField = 'weight_kg') => ({
+    Alpine.data('dosageWidget', (rules = [], weightField = 'weight_kg', target = null) => ({
         rules,
         weightField,
         drug: null,
         override: null,
         reason: '',
+        target,
+
+        init() {
+            if (!this.target) return;
+            this.$watch('drug', () => this.sync());
+            this.$watch('override', () => this.sync());
+            this.$watch('reason', () => this.sync());
+            this.$watch('weight', () => this.sync());
+            this.sync();
+        },
+
+        sync() {
+            this.target.pediatric_dosage = this.result === null
+                ? {}
+                : {
+                    drug: this.result.drug,
+                    dose_mg: this.displayedDose,
+                    doses_per_day: this.result.doses_per_day,
+                    dose_per_day_mg: this.result.dose_per_day_mg,
+                    max_daily_mg: this.result.max_daily_mg,
+                    exceeds_max: this.result.exceeds_max,
+                    override_reason: this.override === null || this.override === '' ? '' : this.reason,
+                };
+        },
 
         get rule() {
             return this.rules.find((r) => r.drug === this.drug) ?? null;
+        },
+
+        get weight() {
+            return this.target?.[this.weightField] ?? null;
         },
 
         get result() {
@@ -104,13 +154,29 @@ export function registerDosageCalculator(Alpine) {
 /* -------------------------------------------------------------------------- */
 
 export function registerPainCanvas(Alpine) {
-    Alpine.data('painCanvas', (initial = [], readonly = false) => ({
+    Alpine.data('painCanvas', (initial = [], readonly = false, target = null) => ({
         markers: Array.isArray(initial) ? initial.map((m) => ({ ...m })) : [],
         readonly,
         focused: false,
         pending: null,
         severity: 0,
         reticle: { x: 50, y: 40 },
+        target,
+
+        init() {
+            if (!this.target) return;
+            this.$watch('markers', () => this.sync());
+            this.sync();
+        },
+
+        sync() {
+            this.target.pain_markers = this.markers.map((m) => ({
+                x: Number(m.x),
+                y: Number(m.y),
+                region: m.region,
+                severity: Number(m.severity),
+            }));
+        },
 
         get visiblePins() {
             return this.markers;
@@ -250,6 +316,16 @@ export function registerFormEngine(Alpine) {
         /* --- localStorage draft (AC-04.1) -------------------------------- */
 
         persistLocal() {
+            // Nothing left to protect once the server has acknowledged the
+            // submission (AC-04.3); without this guard the autosave timer
+            // recreates the key the submit handler just purged.
+            if (this.submitted) return;
+
+            // AC-04.2: while a stored draft is still waiting to be restored or
+            // discarded, the autosave would overwrite the very thing the
+            // recovery banner is offering.
+            if (this.recoveredAt) return;
+
             try {
                 localStorage.setItem(
                     this.draftKey,
@@ -283,14 +359,19 @@ export function registerFormEngine(Alpine) {
             const stored = this.readLocalDraft();
             if (!stored) return;
 
-            this.payload = { ...this.payload, ...stored.payload };
+            // Mutated in place, not reassigned: the nested widgets hold a
+            // reference to this exact object (see the sync() methods above).
+            Object.assign(this.payload, stored.payload);
             this.recoveredAt = null;
         },
 
         discard() {
             localStorage.removeItem(this.draftKey);
             this.recoveredAt = null;
-            this.payload = {};
+
+            for (const key of Object.keys(this.payload)) {
+                delete this.payload[key];
+            }
         },
 
         /* --- server draft (R-03) ----------------------------------------- */
@@ -423,4 +504,244 @@ function clampSeverity(value) {
 
 function round(value) {
     return Math.round(Number(value) * 100) / 100;
+}
+/* -------------------------------------------------------------------------- */
+/* Page-level components                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Patient lookup (AC-05.3, user-flow.md §Flow 1 step 1).
+ *
+ * Registered here rather than in a page script: Alpine.start() runs when this
+ * module is evaluated, so an inline `alpine:init` listener added afterwards
+ * would never fire and the component would silently not exist.
+ */
+export function registerPatientLookup(Alpine) {
+    Alpine.data('patientLookup', (config = {}) => ({
+        nik: config.initial ?? '',
+        loading: false,
+        error: null,
+        result: null,
+
+        get formUrl() {
+            return `/portal/nurse/intake/${this.result.open_encounter_id}`;
+        },
+
+        async search() {
+            this.error = null;
+            this.result = null;
+
+            const value = this.nik.replace(/\D/g, '');
+
+            if (value.length !== 16) {
+                this.error = 'NIK harus terdiri dari 16 digit angka.';
+                return;
+            }
+
+            this.loading = true;
+
+            try {
+                const response = await fetch(`/api/v1/patients/search?nik=${value}`, {
+                    headers: { Accept: 'application/json' },
+                });
+
+                const body = await response.json();
+
+                if (response.status === 404) {
+                    this.error = 'Pasien dengan NIK tersebut tidak ditemukan.';
+                    return;
+                }
+
+                if (!response.ok) {
+                    this.error = body?.error?.message ?? 'Pencarian gagal.';
+                    return;
+                }
+
+                this.result = body.data;
+            } catch {
+                this.error = 'Koneksi terputus. Periksa jaringan intranet.';
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        // A patient with no open visit still needs an encounter before the
+        // intake form can be opened.
+        async createEncounter() {
+            this.error = null;
+            this.loading = true;
+
+            try {
+                const response = await fetch('/api/v1/encounters', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                    },
+                    body: JSON.stringify({
+                        patient_id: this.result.id,
+                        encounter_type: 'EMER',
+                        service_unit: 'IGD',
+                    }),
+                });
+
+                const body = await response.json();
+
+                if (!response.ok) {
+                    this.error = body?.error?.message ?? 'Kunjungan gagal dibuat.';
+                    return;
+                }
+
+                window.location.assign(`/portal/nurse/intake/${body.data.id}`);
+            } catch {
+                this.error = 'Koneksi terputus. Periksa jaringan intranet.';
+            } finally {
+                this.loading = false;
+            }
+        },
+    }));
+}
+
+/**
+ * Live summary rail beside the intake form.
+ */
+export function registerFormSummary(Alpine) {
+    Alpine.data('formSummary', () => ({
+        get triageLabel() {
+            return window.KlinikForm.triage[this.payload.triage_category]?.label ?? '—';
+        },
+        get bloodPressure() {
+            if (!this.payload.systolic || !this.payload.diastolic) return '—';
+            return `${this.payload.systolic}/${this.payload.diastolic} mmHg`;
+        },
+        get peakPain() {
+            const markers = this.payload.pain_markers;
+            if (!Array.isArray(markers) || markers.length === 0) return '—';
+            return `${Math.max(...markers.map((m) => Number(m.severity) || 0))}/10`;
+        },
+    }));
+}
+
+/**
+ * DPJP sign-off (AC-08, user-flow.md §Flow 2 step 5).
+ */
+export function registerAssessmentForm(Alpine) {
+    Alpine.data('assessmentForm', (submissionId, endpointTemplate) => ({
+        submissionId,
+        endpointTemplate,
+        selectedCode: '',
+        objective_findings: '',
+        errors: {},
+        signing: false,
+
+        async submit() {
+            if (!this.submissionId) return;
+
+            this.signing = true;
+            this.errors = {};
+
+            try {
+                const response = await fetch(
+                    this.endpointTemplate.replace('{submission}', this.submissionId),
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json',
+                            'X-CSRF-TOKEN': csrfToken(),
+                        },
+                        body: JSON.stringify({
+                            primary_icd10_code: this.selectedCode,
+                            objective_findings: this.objective_findings,
+                        }),
+                    },
+                );
+
+                const body = await response.json();
+
+                if (response.status === 422) {
+                    this.errors = body?.error?.details ?? {};
+                    return;
+                }
+
+                // 409 means someone else signed it first; reload to show the
+                // locked record rather than an error.
+                if (response.status === 409 || response.ok) {
+                    window.location.reload();
+                    return;
+                }
+
+                toast('error', body?.error?.message ?? 'Penandatanganan gagal.');
+            } catch {
+                toast('warning', 'Koneksi terputus. Coba lagi.');
+            } finally {
+                this.signing = false;
+            }
+        },
+    }));
+}
+
+/**
+ * Schema editor (user-flow.md §Flow 3): dry-run validation then publish.
+ */
+export function registerSchemaEditor(Alpine) {
+    Alpine.data('schemaEditor', (json, currentVersion, validateUrl, name = '') => ({
+        json,
+        // Left undefined the #name input renders empty, and its `required`
+        // attribute then silently blocks the publish submit.
+        name,
+        // Declared for the same reason: x-model="activate" on an undeclared
+        // property raises a ReferenceError that aborts the submit handler.
+        activate: true,
+        baseline: json,
+        nextVersion: Number(currentVersion) + 1,
+        valid: false,
+        publishing: false,
+        errors: [],
+        newFields: [],
+        summary: null,
+
+        async validate() {
+            const response = await fetch(validateUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                body: JSON.stringify({ schema_definition: this.json, baseline: this.baseline }),
+            });
+
+            const body = await response.json();
+
+            this.valid = body.valid === true;
+            this.errors = body.errors ?? [];
+            this.newFields = body.new_fields ?? [];
+            this.summary = body.summary ?? (body.errors ?? ['JSON tidak valid.']).join(' ');
+        },
+
+        // The form arrives from the submit event: Alpine has no $root magic,
+        // and this.$el is null inside the handler, so neither can be used to
+        // reach it.
+        publish(form) {
+            this.publishing = true;
+
+            form.querySelector('#schema_definition').value = this.json;
+            form.submit();
+        },
+    }));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared helpers                                                             */
+/* -------------------------------------------------------------------------- */
+
+function csrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.content ?? '';
+}
+
+/** Surface an outcome in the shared toast region (role="status"). */
+export function toast(tone, message, body = null) {
+    window.dispatchEvent(new CustomEvent('klinikform:toast', { detail: { tone, message, body } }));
 }

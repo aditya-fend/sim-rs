@@ -1,9 +1,13 @@
 import Alpine from 'alpinejs';
 import {
     registerGcsCalculator,
+    registerDosageCalculator,
     registerPainCanvas,
     registerFormEngine,
-    registerDosageCalculator,
+    registerPatientLookup,
+    registerFormSummary,
+    registerAssessmentForm,
+    registerSchemaEditor,
 } from './form-engine';
 
 // Clinical microcopy lives in one place so Blade templates and Alpine
@@ -42,6 +46,10 @@ registerGcsCalculator(Alpine);
 registerDosageCalculator(Alpine);
 registerPainCanvas(Alpine);
 registerFormEngine(Alpine);
+registerPatientLookup(Alpine);
+registerFormSummary(Alpine);
+registerAssessmentForm(Alpine);
+registerSchemaEditor(Alpine);
 
 window.Alpine = Alpine;
 Alpine.start();

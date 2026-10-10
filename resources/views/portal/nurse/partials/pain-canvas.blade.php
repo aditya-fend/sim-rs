@@ -15,7 +15,7 @@
     $bands = ['Tidak Nyeri', 'Ringan', 'Sedang', 'Berat'];
 @endphp
 
-<div class="card p-4" x-data="painCanvas(@js($markers), @js($readonly))">
+<div class="card p-4" x-data="painCanvas(@js($markers), @js($readonly), payload)">
     <p class="text-heading-sm">Peta Nyeri Anatomis</p>
 
     <div class="mt-3 grid gap-4 sm:grid-cols-2">
@@ -94,8 +94,12 @@
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
             @for ($i = 0; $i <= 10; $i++)
-                <label class="cursor-pointer">
-                    <input type="radio" class="peer sr-only" name="pain-severity"
+                {{-- The radio itself is visually hidden (it stays focusable and
+                     announced), so the label carries the id that the click
+                     target and its aria description hang off. --}}
+                <label id="pain-severity-label-{{ $i }}" for="pain-severity-{{ $i }}"
+                       class="cursor-pointer">
+                    <input type="radio" id="pain-severity-{{ $i }}" class="peer sr-only" name="pain-severity"
                            :value="{{ $i }}" x-model.number="severity">
                     <span class="grid h-9 w-9 place-items-center rounded-md border border-border-subtle
                                  font-mono-md transition-colors duration-150
@@ -109,8 +113,12 @@
         <p class="mt-2 text-body-sm text-text-secondary">Ter Stadium: <strong x-text="band"></strong></p>
 
         <div class="mt-3 flex gap-2">
-            <button type="button" class="btn-primary" x-on:click="confirm()">Simpan Penanda</button>
-            <button type="button" class="btn-secondary" x-on:click="pending = null">Batal</button>
+            <button type="button" id="pain-pin-confirm" class="btn-primary" x-on:click="confirm()">
+                Simpan Penanda
+            </button>
+            <button type="button" id="pain-pin-cancel" class="btn-secondary" x-on:click="pending = null">
+                Batal
+            </button>
         </div>
     </div>
 
