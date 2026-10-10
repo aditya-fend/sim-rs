@@ -1,49 +1,88 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\HasUuidKey;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * Hospital personnel (erd.md §1). erd.md gives users a UUID primary key,
+ * which means Authenticatable must not assume an auto-increment id.
+ *
+ * @property string $id
+ * @property string $name
+ * @property string $email
+ * @property string|null $sip_number
+ * @property string|null $two_factor_secret_confirmed_at
+ *
+
+ * @use HasFactory<UserFactory>
+ */
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use HasRoles;
+    use HasUuidKey;
+    use Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'sip_number',
+        'nik_hash',
+        'ihs_practitioner_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_recovery_codes',
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_secret_confirmed_at' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Encounters where this clinician is the attending DPJP.
+     *
+     * @return HasMany<Encounter, $this>
+     */
+    public function dpjpEncounters(): HasMany
+    {
+        return $this->hasMany(Encounter::class, 'dpjp_user_id');
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_secret_confirmed_at !== null;
+    }
+
+    /**
+     * Name plus SIP line, as printed on the Permenkes signature stamp
+     * (ui-spec.md `c-signature-stamp`).
+     */
+    public function signatureLine(): string
+    {
+        return $this->sip_number !== null && $this->sip_number !== ''
+            ? "{$this->name} — SIP: {$this->sip_number}"
+            : $this->name;
     }
 }

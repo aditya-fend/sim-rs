@@ -11,6 +11,12 @@ parameters:
     excludePaths:
         - storage
         - bootstrap/cache
-    checkMissingIterableValueType: true
-    checkGenericClassInNonGenericObjectType: true
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Larastan already resolves `Model::factory()` by the
+        # Database\Factories\{Model}Factory naming convention, so naming the
+        # trait's template parameter explicitly adds nothing. PHPStan does not
+        # apply `@use Trait<Arg>` for generic traits, hence the suppression.
+        -
+            identifier: missingType.generics
+            message: '#uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory#'
