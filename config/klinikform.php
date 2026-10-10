@@ -75,7 +75,12 @@ return [
         // AC-07.3 / FR-20: reject anything drifting more than this.
         'timestamp_tolerance_seconds' => 300,
 
-        // The simulator answers for a card only if its 13th digit is not 0.
+        // Simulator affordance, not a BPJS rule: no document specifies how a
+        // card becomes inactive, but user-flow.md §Flow 4 branches on card
+        // validity, so the simulator needs a deterministic way to produce the
+        // "Peserta Tidak Aktif" response. A card ending in this digit is
+        // treated as suspended. Point it at a real eligibility source when one
+        // exists.
         'inactive_card_final_digit' => '0',
     ],
 
