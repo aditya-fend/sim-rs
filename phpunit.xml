@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Browser">
+            <directory>tests/Browser</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <!-- NFR-11 names the four areas the coverage gate is enforced on:
+                 Form Requests, Encryption Casts, Dynamic Validation Services and
+                 FHIR Mapping Controllers. Broader paths are measured but not gated. -->
+            <directory>app/Http/Requests</directory>
+            <directory>app/Casts</directory>
+            <directory>app/Services/FormEngine</directory>
+            <directory>app/Services/Clinical</directory>
+            <directory>app/Services/Interoperability</directory>
+        </include>
+        <exclude>
+            <directory>app/Providers</directory>
+            <file>bootstrap/app.php</file>
+        </exclude>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!-- erd.md leans on Postgres-only features (partial unique index on
+             form_templates, regex check constraints, RAISE triggers), so the
+             suite runs against the real engine rather than SQLite. -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="klinikform_test"/>
+        <env name="DB_USERNAME" value="simrs"/>
+        <env name="DB_PASSWORD" value="simrs_secret"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="BLIND_INDEX_PEPPER" value="test-pepper-do-not-use-in-production"/>
+        <env name="FAPI_TOKEN" value="test-fapi-token"/>
+        <env name="BPJS_CONS_ID" value="1234567890"/>
+        <env name="BPJS_SECRET_KEY" value="test-bpjs-secret-key-0123456789abcd"/>
+        <env name="BPJS_USER_KEY" value="test-bpjs-user-key"/>
+        <env name="BPJS_FASKES_CODE" value="0301R001"/>
+    </php>
+</phpunit>

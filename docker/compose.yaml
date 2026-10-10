@@ -1,0 +1,89 @@
+name: klinikform-simrs
+
+x-app-env: &app-env
+  COMPOSER_HOME: /tmp/composer-home
+  HOME: /tmp
+  DB_CONNECTION: pgsql
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_DATABASE: ${DB_DATABASE:-klinikform}
+  DB_USERNAME: ${DB_USERNAME:-simrs}
+  DB_PASSWORD: ${DB_PASSWORD:-simrs_secret}
+  REDIS_HOST: redis
+  CACHE_STORE: redis
+  SESSION_DRIVER: redis
+  QUEUE_CONNECTION: redis
+
+x-app-base: &app-base
+  working_dir: /var/www/html
+  # Run as the host user so composer/artisan never leave root-owned files in
+  # the workspace. COMPOSER_HOME/HOME are redirected because the host user's
+  # home directory does not exist inside the container.
+  user: "${DOCKER_UID:?set DOCKER_UID in docker/.env}:${DOCKER_GID:?set DOCKER_GID in docker/.env}"
+  volumes:
+    - ..:/var/www/html
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app-base
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: base
+    environment:
+      <<: *app-env
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports:
+      - "8000:8000"
+
+  # Same stack with a browser attached, for `php artisan dusk` (E2E-01..05).
+  dusk:
+    <<: *app-base
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dusk
+    environment:
+      <<: *app-env
+      APP_URL: http://nginx
+      DUSK_DRIVER_URL: /usr/bin/chromedriver
+    command: sleep infinity
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-klinikform}
+      POSTGRES_USER: ${DB_USERNAME:-simrs}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-simrs_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-simrs} -d ${DB_DATABASE:-klinikform}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

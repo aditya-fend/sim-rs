@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # NFR-10: zero errors under static analysis.
+    level: 8
+    paths:
+        - app
+        - database
+        - routes
+    excludePaths:
+        - storage
+        - bootstrap/cache
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    treatPhpDocTypesAsCertain: false
