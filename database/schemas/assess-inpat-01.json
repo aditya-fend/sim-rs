@@ -1,0 +1,430 @@
+{
+    "form_code": "ASSESS-INPAT-01",
+    "form_title": "Asesmen Awal Keperawatan & Medis Rawat Inap",
+    "description": "Asesmen awal pasien rawat inap yang diisi perawat pada admisi, dilanjutkan dan ditandatangani oleh Dokter Penanggung Jawab Pelayanan (DPJP).",
+    "sections": [
+        {
+            "key": "identity",
+            "label": "A. Data Dasar",
+            "fields": [
+                {
+                    "name": "weight_kg",
+                    "label": "Berat Badan",
+                    "type": "number",
+                    "unit": "kg",
+                    "min": 0.5,
+                    "max": 300,
+                    "step": 0.1,
+                    "validation_rules": ["required", "numeric", "min:0.5", "max:300"],
+                    "messages": { "between": "Berat badan harus di antara 0,5 – 300 kg." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "height_cm",
+                    "label": "Tinggi Badan",
+                    "type": "number",
+                    "unit": "cm",
+                    "min": 30,
+                    "max": 250,
+                    "step": 0.5,
+                    "validation_rules": ["required", "numeric", "min:30", "max:250"],
+                    "messages": { "between": "Tinggi badan harus di antara 30 – 250 cm." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "bmi",
+                    "label": "Indeks Massa Tubuh",
+                    "type": "number",
+                    "unit": "kg/m²",
+                    "min": 5,
+                    "max": 100,
+                    "step": 0.1,
+                    "validation_rules": ["nullable", "numeric", "min:5", "max:100"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "blood_type",
+                    "label": "Golongan Darah",
+                    "type": "select",
+                    "options": [
+                        { "value": "A", "label": "A" },
+                        { "value": "B", "label": "B" },
+                        { "value": "AB", "label": "AB" },
+                        { "value": "O", "label": "O" },
+                        { "value": "unknown", "label": "Tidak diketahui" }
+                    ],
+                    "validation_rules": ["nullable"],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "anamnesis",
+            "label": "B. Anamnesis",
+            "description": "Bagian ini bersifat rahasia pasien dan dienkripsi otomatis sebelum disimpan (FR-10).",
+            "fields": [
+                {
+                    "name": "chief_complaint",
+                    "label": "Keluhan Utama",
+                    "type": "textarea",
+                    "validation_rules": ["required", "string", "max:500"],
+                    "messages": { "required": "Keluhan utama wajib diisi." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "present_illness",
+                    "label": "Riwayat Penyakit Sekarang",
+                    "type": "textarea",
+                    "validation_rules": ["required", "string", "max:3000"],
+                    "messages": { "required": "Riwayat penyakit sekarang wajib diisi." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "past_medical_history",
+                    "label": "Riwayat Penyakit Sebelumnya",
+                    "type": "textarea",
+                    "validation_rules": ["nullable", "string", "max:2000"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "family_medical_history",
+                    "label": "Riwayat Keluarga",
+                    "type": "textarea",
+                    "validation_rules": ["nullable", "string", "max:2000"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "medication_history",
+                    "label": "Riwayat Penggunaan Obat",
+                    "type": "textarea",
+                    "validation_rules": ["nullable", "string", "max:2000"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "anamnesis_notes",
+                    "label": "Catatan Anamnesis Rahasia",
+                    "type": "textarea",
+                    "confidential": true,
+                    "validation_rules": ["nullable", "string", "max:4000"],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "vitals",
+            "label": "C. Tanda Vital",
+            "fields": [
+                {
+                    "name": "systolic",
+                    "label": "Tekanan Darah Sistole",
+                    "type": "number",
+                    "unit": "mmHg",
+                    "min": 40,
+                    "max": 300,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:40", "max:300"],
+                    "messages": { "between": "Nilai sistol harus di antara 40 – 300 mmHg." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "diastolic",
+                    "label": "Tekanan Darah Diastole",
+                    "type": "number",
+                    "unit": "mmHg",
+                    "min": 30,
+                    "max": 200,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:30", "max:200"],
+                    "messages": { "between": "Nilai diastol harus di antara 30 – 200 mmHg." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "heart_rate",
+                    "label": "Nadi",
+                    "type": "number",
+                    "unit": "x/menit",
+                    "min": 20,
+                    "max": 250,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:20", "max:250"],
+                    "messages": { "between": "Nadi harus di antara 20 – 250 x/menit." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "respiratory_rate",
+                    "label": "Frekuensi Pernapasan",
+                    "type": "number",
+                    "unit": "x/menit",
+                    "min": 5,
+                    "max": 60,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:5", "max:60"],
+                    "messages": { "between": "Frekuensi pernapasan harus di antara 5 – 60 x/menit." },
+                    "conditional_display": null
+                },
+                {
+                    "name": "body_temperature",
+                    "label": "Suhu Tubuh",
+                    "type": "number",
+                    "unit": "°C",
+                    "min": 30,
+                    "max": 43,
+                    "step": 0.1,
+                    "validation_rules": ["required", "numeric", "min:30", "max:43"],
+                    "messages": { "between": "Suhu tubuh harus di antara 30 – 43 °C." },
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "physical_exam",
+            "label": "D. Pemeriksaan Fisis",
+            "fields": [
+                {
+                    "name": "general_condition",
+                    "label": "Keadaan Umum",
+                    "type": "select",
+                    "options": [
+                        { "value": "good", "label": "Baik" },
+                        { "value": "fair", "label": "Sedang" },
+                        { "value": "poor", "label": "Buruk" }
+                    ],
+                    "validation_rules": ["required"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "physical_exam_notes",
+                    "label": "Hasil Pemeriksaan Fisik",
+                    "type": "textarea",
+                    "validation_rules": ["nullable", "string", "max:4000"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "gcs",
+                    "label": "Skala Koma Glasgow (GCS)",
+                    "type": "gcs_calculator",
+                    "help": "Pilih ketiga parameter (E, V, M) untuk menghitung GCS.",
+                    "validation_rules": ["nullable", "array"],
+                    "sub_fields": [
+                        {
+                            "name": "eye",
+                            "label": "Eye Response (E)",
+                            "type": "select",
+                            "min": 1,
+                            "max": 4,
+                            "options": [
+                                { "value": "1", "label": "1 — Tidak ada respons" },
+                                { "value": "2", "label": "2 — Mereaksi terhadap rangsangan" },
+                                { "value": "3", "label": "3 — To Speech (Berbicara)" },
+                                { "value": "4", "label": "4 — Spontaneous (Spontan)" }
+                            ],
+                            "validation_rules": ["required_with:gcs", "integer", "min:1", "max:4"]
+                        },
+                        {
+                            "name": "verbal",
+                            "label": "Verbal Response (V)",
+                            "type": "select",
+                            "min": 1,
+                            "max": 5,
+                            "options": [
+                                { "value": "1", "label": "1 — Tidak ada respons" },
+                                { "value": "2", "label": "2 — Moeran / Bergumam" },
+                                { "value": "3", "label": "3 — Kata-kata tidak sesuai" },
+                                { "value": "4", "label": "4 — Confused (Bingung)" },
+                                { "value": "5", "label": "5 — Orientasi baik" }
+                            ],
+                            "validation_rules": ["required_with:gcs", "integer", "min:1", "max:5"]
+                        },
+                        {
+                            "name": "motor",
+                            "label": "Motor Response (M)",
+                            "type": "select",
+                            "min": 1,
+                            "max": 6,
+                            "options": [
+                                { "value": "1", "label": "1 — Tidak ada respons" },
+                                { "value": "2", "label": "2 — Ekspresi wajah" },
+                                { "value": "3", "label": "3 — Fleksi normal" },
+                                { "value": "4", "label": "4 — Withdraws" },
+                                { "value": "5", "label": "5 — Localizes Pain" },
+                                { "value": "6", "label": "6 — Obeys Commands" }
+                            ],
+                            "validation_rules": ["required_with:gcs", "integer", "min:1", "max:6"]
+                        },
+                        {
+                            "name": "total",
+                            "label": "Total GCS",
+                            "type": "number",
+                            "validation_rules": ["required_with:gcs", "integer", "min:3", "max:15"]
+                        },
+                        {
+                            "name": "category",
+                            "label": "Kategori Kesadaran",
+                            "type": "text",
+                            "validation_rules": ["required_with:gcs", "string", "in:coma,sopor,somnolent,apatis,compos_mentis"]
+                        }
+                    ],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "pain",
+            "label": "E. Nyeri & Risiko Jatuh",
+            "fields": [
+                {
+                    "name": "pain_markers",
+                    "label": "Peta Nyeri Anatomis",
+                    "type": "pain_canvas",
+                    "validation_rules": ["nullable", "array"],
+                    "item_rules": {
+                        "x": ["required", "numeric", "min:0", "max:100"],
+                        "y": ["required", "numeric", "min:0", "max:100"],
+                        "region": ["required", "string"],
+                        "severity": ["required", "integer", "min:0", "max:10"]
+                    },
+                    "regions": [
+                        { "id": "head", "label": "Kepala" },
+                        { "id": "neck", "label": "Leher" },
+                        { "id": "chest", "label": "Dada" },
+                        { "id": "epigastrium", "label": "Epigastrium" },
+                        { "id": "right_upper_quadrant", "label": "Kuadran kanan atas" },
+                        { "id": "left_upper_quadrant", "label": "Kuadran kiri atas" },
+                        { "id": "periumbilical", "label": "Periumbilikal" },
+                        { "id": "right_lower_quadrant", "label": "Kuadran kanan bawah" },
+                        { "id": "left_lower_quadrant", "label": "Kuadran kiri bawah" },
+                        { "id": "back", "label": "Punggung" },
+                        { "id": "right_arm", "label": "Lengan kanan" },
+                        { "id": "left_arm", "label": "Lengan kiri" },
+                        { "id": "right_leg", "label": "Kaki kanan" },
+                        { "id": "left_leg", "label": "Kaki kiri" }
+                    ],
+                    "conditional_display": null
+                },
+                {
+                    "name": "pain_severity",
+                    "label": "Skala Nyeri (NRS)",
+                    "type": "number",
+                    "unit": "0-10",
+                    "min": 0,
+                    "max": 10,
+                    "step": 1,
+                    "validation_rules": ["nullable", "integer", "min:0", "max:10"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "morse_score",
+                    "label": "Skala Risiko Jatuh Morse",
+                    "type": "number",
+                    "unit": "poin",
+                    "min": 0,
+                    "max": 125,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:0", "max:125"],
+                    "messages": {
+                        "between": "Skor Morse berada di antara 0 – 125.",
+                        "required": "Skor risiko jatuh Morse wajib diisi."
+                    },
+                    "help": "0–25 risiko rendah, 26–44 sedang, ≥45 tinggi.",
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "pediatric_dosage",
+            "label": "F. Dosis Obat Pediatrik",
+            "description": "Hanya relevan untuk pasien berusia di bawah 18 tahun. Dosis dihitung otomatis dari berat badan; DPJP dapat mengoreksi dengan alasan klinis.",
+            "fields": [
+                {
+                    "name": "pediatric_dosage",
+                    "label": "Perhitungan Dosis",
+                    "type": "dosage_calculator",
+                    "weight_field": "weight_kg",
+                    "validation_rules": ["nullable", "array"],
+                    "item_rules": {
+                        "drug": ["required", "string"],
+                        "dose_mg": ["required", "numeric", "min:0"],
+                        "dose_per_day_mg": ["required", "numeric", "min:0"],
+                        "max_daily_mg": ["required", "numeric", "min:0"],
+                        "exceeds_max": ["required", "boolean"],
+                        "override_reason": ["nullable", "string", "max:500"]
+                    },
+                    "rules": [
+                        {
+                            "drug": "Amoksisilin",
+                            "generic": "Amoxicillin",
+                            "mg_per_kg_per_dose": 25,
+                            "doses_per_day": 3,
+                            "route": "Oral",
+                            "max_mg_per_kg_per_day": 100
+                        },
+                        {
+                            "drug": "Paracetamol",
+                            "generic": "Paracetamol",
+                            "mg_per_kg_per_dose": 15,
+                            "doses_per_day": 4,
+                            "route": "Oral",
+                            "max_mg_per_kg_per_day": 60
+                        },
+                        {
+                            "drug": "Ibuprofen",
+                            "generic": "Ibuprofen",
+                            "mg_per_kg_per_dose": 10,
+                            "doses_per_day": 3,
+                            "route": "Oral",
+                            "max_mg_per_kg_per_day": 40
+                        },
+                        {
+                            "drug": "Seftotaksim",
+                            "generic": "Cefotaxime",
+                            "mg_per_kg_per_dose": 50,
+                            "doses_per_day": 3,
+                            "route": "IV",
+                            "max_mg_per_kg_per_day": 200
+                        },
+                        {
+                            "drug": "Azitromisin",
+                            "generic": "Azithromycin",
+                            "mg_per_kg_per_dose": 10,
+                            "doses_per_day": 1,
+                            "route": "Oral",
+                            "max_mg_per_kg_per_day": 15
+                        }
+                    ],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "diagnosis",
+            "label": "G. Diagnosis & Terapi (Diisi DPJP)",
+            "fields": [
+                {
+                    "name": "primary_icd10_code",
+                    "label": "Diagnosis Utama (ICD-10)",
+                    "type": "text",
+                    "validation_rules": ["required", "string", "regex:/^[A-Z][0-9]{2}(\\.[0-9A-Z]{1,4})?$/"],
+                    "messages": {
+                        "required": "Diagnosis utama wajib diisi.",
+                        "regex": "Format kode ICD-10 tidak valid. Contoh: K29.7"
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "objective_findings",
+                    "label": "Temuan Objektif Dokter",
+                    "type": "textarea",
+                    "validation_rules": ["nullable", "string", "max:3000"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "therapy_plan",
+                    "label": "Rencana Terapi",
+                    "type": "textarea",
+                    "validation_rules": ["nullable", "string", "max:3000"],
+                    "conditional_display": null
+                }
+            ]
+        }
+    ]
+}

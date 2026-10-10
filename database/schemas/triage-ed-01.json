@@ -1,0 +1,359 @@
+{
+    "form_code": "TRIAGE-ED-01",
+    "form_title": "Formulir Triase Gawat Darurat",
+    "description": "Formulir triase IGD sesuai standar ATS Kementerian Kesehatan RI. Diisi per pasien pada saat tiba di Instalasi Gawat Darurat.",
+    "sections": [
+        {
+            "key": "triage",
+            "label": "A. Identifikasi & Kategori Triase",
+            "fields": [
+                {
+                    "name": "arrival_time",
+                    "label": "Waktu Tiba di IGD",
+                    "type": "datetime",
+                    "validation_rules": ["required", "date"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "transport_mode",
+                    "label": "Sarana Transportasi",
+                    "type": "radio",
+                    "options": [
+                        { "value": "walker", "label": "Jalan Kaki" },
+                        { "value": "ambulance", "label": "Ambulans" },
+                        { "value": "police", "label": "Pengawalan Polisi" },
+                        { "value": "referral", "label": "Rujukan" }
+                    ],
+                    "default_value": "walker",
+                    "validation_rules": ["required"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "triage_category",
+                    "label": "Kategori Triase (ATS)",
+                    "type": "select",
+                    "options": [
+                        { "value": "resuscitation", "label": "Kategori 1: Resusitasi (Merah)", "target_minutes": 0 },
+                        { "value": "emergent", "label": "Kategori 2: Emergensi (Oranye)", "target_minutes": 10 },
+                        { "value": "urgent", "label": "Kategori 3: Urgensi (Kuning)", "target_minutes": 30 },
+                        { "value": "less_urgent", "label": "Kategori 4: Semi-Urgensi (Hijau)", "target_minutes": 60 },
+                        { "value": "non_urgent", "label": "Kategori 5: Non-Urgensi (Biru)", "target_minutes": 120 }
+                    ],
+                    "validation_rules": ["required"],
+                    "messages": {
+                        "required": "Kategori triase wajib dipilih."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "triage_nurse",
+                    "label": "Perawat Triase",
+                    "type": "text",
+                    "validation_rules": ["required", "string", "max:100"],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "vitals",
+            "label": "B. Tanda Vital",
+            "description": "Diukur pada saat triase. Nilai di luar batas klinis dianggap tidak realistis dan akan ditolak sistem.",
+            "fields": [
+                {
+                    "name": "systolic",
+                    "label": "Tekanan Darah Sistole",
+                    "type": "number",
+                    "unit": "mmHg",
+                    "min": 40,
+                    "max": 300,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:40", "max:300"],
+                    "messages": {
+                        "between": "Nilai sistol harus di antara 40 – 300 mmHg.",
+                        "required": "Tekanan darah sistole wajib diisi."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "diastolic",
+                    "label": "Tekanan Darah Diastole",
+                    "type": "number",
+                    "unit": "mmHg",
+                    "min": 30,
+                    "max": 200,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:30", "max:200"],
+                    "messages": {
+                        "between": "Nilai diastol harus di antara 30 – 200 mmHg.",
+                        "required": "Tekanan darah diastole wajib diisi."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "heart_rate",
+                    "label": "Nadi",
+                    "type": "number",
+                    "unit": "x/menit",
+                    "min": 20,
+                    "max": 250,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:20", "max:250"],
+                    "messages": {
+                        "between": "Nadi harus di antara 20 – 250 x/menit."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "respiratory_rate",
+                    "label": "Frekuensi Pernapasan",
+                    "type": "number",
+                    "unit": "x/menit",
+                    "min": 5,
+                    "max": 60,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:5", "max:60"],
+                    "messages": {
+                        "between": "Frekuensi pernapasan harus di antara 5 – 60 x/menit."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "body_temperature",
+                    "label": "Suhu Tubuh",
+                    "type": "number",
+                    "unit": "°C",
+                    "min": 30,
+                    "max": 43,
+                    "step": 0.1,
+                    "validation_rules": ["required", "numeric", "min:30", "max:43"],
+                    "messages": {
+                        "between": "Suhu tubuh harus di antara 30 – 43 °C."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "oxygen_saturation",
+                    "label": "Saturasi Oksigen (SpO2)",
+                    "type": "number",
+                    "unit": "%",
+                    "min": 50,
+                    "max": 100,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:50", "max:100"],
+                    "messages": {
+                        "between": "SpO2 harus di antara 50 – 100 %."
+                    },
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "consciousness",
+            "label": "C. Tingkat Kesadaran",
+            "fields": [
+                {
+                    "name": "gcs",
+                    "label": "Skala Koma Glasgow (GCS)",
+                    "type": "gcs_calculator",
+                    "help": "Pilih ketiga parameter (E, V, M) untuk menghitung GCS.",
+                    "validation_rules": ["required", "array"],
+                    "messages": {
+                        "required": "GCS wajib diisi."
+                    },
+                    "sub_fields": [
+                        {
+                            "name": "eye",
+                            "label": "Eye Response (E)",
+                            "type": "select",
+                            "min": 1,
+                            "max": 4,
+                            "options": [
+                                { "value": "1", "label": "1 — Tidak ada respons" },
+                                { "value": "2", "label": "2 — Mereaksi terhadap rangsangan" },
+                                { "value": "3", "label": "3 — To Speech (Berbicara)" },
+                                { "value": "4", "label": "4 — Spontaneous (Spontan)" }
+                            ],
+                            "validation_rules": ["required", "integer", "min:1", "max:4"]
+                        },
+                        {
+                            "name": "verbal",
+                            "label": "Verbal Response (V)",
+                            "type": "select",
+                            "min": 1,
+                            "max": 5,
+                            "options": [
+                                { "value": "1", "label": "1 — Tidak ada respons" },
+                                { "value": "2", "label": "2 — Moeran / Mengваются" },
+                                { "value": "3", "label": "3 — Kata-kata tidak sesuai" },
+                                { "value": "4", "label": "4 — Confused (Bingung)" },
+                                { "value": "5", "label": "5 — Orientasi baik" }
+                            ],
+                            "validation_rules": ["required", "integer", "min:1", "max:5"]
+                        },
+                        {
+                            "name": "motor",
+                            "label": "Motor Response (M)",
+                            "type": "select",
+                            "min": 1,
+                            "max": 6,
+                            "options": [
+                                { "value": "1", "label": "1 — Tidak ada respons" },
+                                { "value": "2", "label": "2 — Ekspresi rosto" },
+                                { "value": "3", "label": "3 — Fleksi normal (menarik diri dari-establishment)" },
+                                { "value": "4", "label": "4 — Withdraws (menarik diri dari-establishment)" },
+                                { "value": "5", "label": "5 — Localizes Pain (mendekati-establishment)" },
+                                { "value": "6", "label": "6 — Obeys Commands (menjalankan perintah)" }
+                            ],
+                            "validation_rules": ["required", "integer", "min:1", "max:6"]
+                        },
+                        {
+                            "name": "total",
+                            "label": "Total GCS",
+                            "type": "number",
+                            "validation_rules": ["required", "integer", "min:3", "max:15"]
+                        },
+                        {
+                            "name": "category",
+                            "label": "Kategori Kesadaran",
+                            "type": "text",
+                            "validation_rules": ["required", "string", "in:coma,sopor,somnolent,apatis,compos_mentis"]
+                        }
+                    ],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "pain",
+            "label": "D. Penilaian Nyeri",
+            "fields": [
+                {
+                    "name": "pain_markers",
+                    "label": "Peta Nyeri Anatomis",
+                    "type": "pain_canvas",
+                    "help": "Klik lokasi nyeri pada tubuh untuk meletakkan penanda.",
+                    "validation_rules": ["nullable", "array"],
+                    "item_rules": {
+                        "x": ["required", "numeric", "min:0", "max:100"],
+                        "y": ["required", "numeric", "min:0", "max:100"],
+                        "region": ["required", "string"],
+                        "severity": ["required", "integer", "min:0", "max:10"]
+                    },
+                    "regions": [
+                        { "id": "head", "label": "Kepala" },
+                        { "id": "neck", "label": "Leher" },
+                        { "id": "chest", "label": "Dada" },
+                        { "id": "epigastrium", "label": "Epigastrium" },
+                        { "id": "right_upper_quadrant", "label": "Kuadran kanan atas" },
+                        { "id": "left_upper_quadrant", "label": "Kuadran kiri atas" },
+                        { "id": "periumbilical", "label": "Periumbilikal" },
+                        { "id": "right_lower_quadrant", "label": "Kuadran kanan bawah" },
+                        { "id": "left_lower_quadrant", "label": "Kuadran kiri bawah" },
+                        { "id": "back", "label": "Punggung" },
+                        { "id": "right_arm", "label": "Lengan kanan" },
+                        { "id": "left_arm", "label": "Lengan kiri" },
+                        { "id": "right_leg", "label": "Kaki kanan" },
+                        { "id": "left_leg", "label": "Kaki kiri" }
+                    ],
+                    "conditional_display": null
+                },
+                {
+                    "name": "pain_severity",
+                    "label": "Skala Nyeri (NRS)",
+                    "type": "number",
+                    "unit": "0-10",
+                    "min": 0,
+                    "max": 10,
+                    "step": 1,
+                    "validation_rules": ["nullable", "integer", "min:0", "max:10"],
+                    "messages": {
+                        "between": "Skala nyeri harus di antara 0 – 10."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "pain_quality",
+                    "label": "Karakter Nyeri",
+                    "type": "select",
+                    "options": [
+                        { "value": "cramping", "label": "Kramper" },
+                        { "value": "burning", "label": "Bakar / Panas" },
+                        { "value": "stabbing", "label": "Tusuk / Tajam" },
+                        { "value": "throbbing", "label": "Berdenyut" },
+                        { "value": "aching", "label": "Nyeri Otot" },
+                        { "value": "squeezing", "label": "Squeeze / Tekanan" }
+                    ],
+                    "validation_rules": ["nullable"],
+                    "conditional_display": null
+                }
+            ]
+        },
+        {
+            "key": "anamnesis",
+            "label": "E. Anamnesis",
+            "fields": [
+                {
+                    "name": "chief_complaint",
+                    "label": "Keluhan Utama",
+                    "type": "textarea",
+                    "validation_rules": ["required", "string", "max:500"],
+                    "messages": {
+                        "required": "Keluhan utama wajib diisi."
+                    },
+                    "conditional_display": null
+                },
+                {
+                    "name": "anamnesis_notes",
+                    "label": "Riwayat Kesehatan",
+                    "type": "textarea",
+                    "confidential": true,
+                    "validation_rules": ["nullable", "string", "max:2000"],
+                    "conditional_display": null
+                },
+                {
+                    "name": "pregnancy_week",
+                    "label": "Usia Kehamilan (minggu)",
+                    "type": "number",
+                    "unit": "minggu",
+                    "min": 0,
+                    "max": 42,
+                    "step": 1,
+                    "validation_rules": ["required", "integer", "min:0", "max:42"],
+                    "messages": {
+                        "required": "Usia kehamilan wajib diisi untuk pasien perempuan usia reproduksi."
+                    },
+                    "conditional_display": {
+                        "depends_on": "gender",
+                        "operator": "==",
+                        "value": "female"
+                    }
+                },
+                {
+                    "name": "travel_endemic_area",
+                    "label": "Riwayat Perjalanan ke Daerah Endemis",
+                    "type": "radio",
+                    "options": [
+                        { "value": "yes", "label": "Ya" },
+                        { "value": "no", "label": "Tidak" }
+                    ],
+                    "validation_rules": ["required"],
+                    "messages": {
+                        "required": "Jawab riwayat perjalanan bila suhu tubuh ≥ 38 °C."
+                    },
+                    "conditional_display": {
+                        "depends_on": "body_temperature",
+                        "operator": ">=",
+                        "value": 38
+                    }
+                },
+                {
+                    "name": "allergy_history",
+                    "label": "Riwayat Alergi",
+                    "type": "text",
+                    "validation_rules": ["nullable", "string", "max:255"],
+                    "conditional_display": null
+                }
+            ]
+        }
+    ]
+}
