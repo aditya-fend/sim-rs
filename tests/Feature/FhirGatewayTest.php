@@ -158,3 +158,45 @@ it('refuses to register an encounter for a patient this SIMRS does not know', fu
         'period' => ['start' => '2025-03-01T08:00:00Z'],
     ], ['Authorization' => 'Bearer '.$this->token])->assertStatus(404);
 });
+
+/**
+ * NFR-03 asks the FHIR read endpoints for <250 ms at a concurrency of 50. On
+ * the 120 requests/minute interactive budget that is arithmetically
+ * unreachable (50 callers at 250 ms each is 200 requests per second), and a
+ * gateway caller has no session to key on, so without a credential-keyed
+ * limiter every hospital behind one NAT shares a single bucket.
+ */
+it('gives the interoperability gateway its own budget, keyed by credential', function (): void {
+    $encounter = makeEncounter(makePatient());
+
+    // Far more than the 120/minute interactive allowance allows, in a burst.
+    for ($i = 0; $i < 150; $i++) {
+        $this->withToken(config('klinikform.fhir.token'))
+            ->getJson("/api/v1/fhir/Encounter/{$encounter->id}")
+            ->assertOk();
+    }
+});
+
+it('still refuses a request with no credential', function (): void {
+    $encounter = makeEncounter(makePatient());
+
+    $this->getJson("/api/v1/fhir/Encounter/{$encounter->id}")->assertUnauthorized();
+});
+
+it('does not let one integrator exhaust another integrator budget', function (): void {
+    // Both callers share a source IP, which is what a hospital behind one NAT
+    // looks like; only the presented credential differs.
+    config(['klinikform.fhir.token' => 'token-a']);
+
+    $encounter = makeEncounter(makePatient());
+
+    for ($i = 0; $i < 130; $i++) {
+        $this->withToken('token-a')->getJson("/api/v1/fhir/Encounter/{$encounter->id}")->assertOk();
+    }
+
+    config(['klinikform.fhir.token' => 'token-b']);
+
+    $this->withToken('token-b')
+        ->getJson("/api/v1/fhir/Encounter/{$encounter->id}")
+        ->assertOk();
+});

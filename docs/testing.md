@@ -105,3 +105,45 @@ A release build is certified for regional hospital deployment (e.g., Grobogan/Pu
 3. **Security Sign-Off**: Zero unencrypted sensitive fields detected in raw database inspection; append-only audit table triggers verified.
 4. **Interoperability Verification**: Generated HL7 FHIR R4 payloads pass 100% validation against official Kemenkes SatuSehat schema test harnesses.
 5. **UAT Sign-Off**: Formal acceptance sign-off completed by regional hospital medical records officer and deployment engineers.
+## Measured performance (NFR-03)
+
+Recorded on the development machine (12 vCPU, containers on the same host).
+Reproduce with the `fpm` image target rather than the CLI one — PHP's
+built-in server has enough per-request overhead to distort the profile, and a
+404 on the FHIR gateway costs the same ~35 ms there as a full Encounter does.
+
+```bash
+docker build -f docker/Dockerfile --target fpm -t klinikform-simrs:fpm .
+docker run -d --name kf-fpm  -p 9001:9000 --network <compose-network> -e INTEROP_RATE_LIMIT_PER_MINUTE=1000000 ...
+docker run -d --name kf-nginx -p 8081:80    --network <compose-network> -v fpm-vhost.conf:/etc/nginx/conf.d/default.conf:ro nginx:1.27-alpine
+
+k6 run -e BASE_URL=http://127.0.0.1:8081 -e FAPI_TOKEN=... -e ENCOUNTER_ID=... \
+       tests/Performance/k6-read-latency.js
+```
+
+`INTEROP_RATE_LIMIT_PER_MINUTE` is raised because the profiles put ~150
+requests/second on the wire, which the production default of 600/minute would
+reject with 429 before the latency could be measured at all.
+
+| SAPI | Requests | p50 | p90 | p95 | Failed |
+| :--- | --- | --- | --- | --- | :--- |
+| `artisan serve` (CLI, 8 workers) | 11 134 | 446 ms | 485 ms | 495 ms | 0.00 % |
+| `php-fpm` (static, 32 children) | 19 216 | 132 ms | 230 ms | 255 ms | 0.02 % |
+
+**NFR-03 is met at p90 and marginally missed at p95**: 255 ms against a 250 ms
+target, a 2 % overshoot. It is not reported as passing. The gap is queueing,
+not work — a single unencumbered request is ~25 ms and the Encounter transform
+itself is ~3 ms, so the p95 is set by pool sizing and would move on a node
+tuned for the target rather than by changing application code.
+
+The 60 s maximum is a k6-side stall; nginx logged those as `499` (client
+closed the connection) with the application having returned `200`.
+
+### A note on the rate limit
+
+NFR-03 asks for 250 ms at a concurrency of 50, which is arithmetically
+unreachable on the 120 requests/minute budget in the status-code table: 50
+callers at 250 ms each is 200 requests per second. The interoperability
+gateways therefore have their own limiter, keyed by the presented credential
+rather than by source address — a gateway caller has no session to key on, so
+keying by IP would put every hospital behind one NAT into a single bucket.

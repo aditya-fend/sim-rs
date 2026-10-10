@@ -90,6 +90,21 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Interoperability rate limit
+    |--------------------------------------------------------------------------
+    |
+    | Requests per minute allowed per interoperability credential. The
+    | default is the production value; raise it only for the staging load
+    | profiles in tests/Performance, which put ~150 requests/second on the
+    | wire and would otherwise be rejected with 429 before latency could be
+    | measured at all (docs/testing.md).
+    |
+    */
+
+    'rate_limit_per_minute' => (int) env('INTEROP_RATE_LIMIT_PER_MINUTE', 600),
+
     'drafts' => [
         'local_storage_interval_seconds' => 5,
         'server_sync_interval_seconds' => 30,

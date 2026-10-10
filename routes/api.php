@@ -78,7 +78,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     // --- SatuSehat HL7 FHIR R4 gateway -----------------------------------------
     // FR-16..FR-18. Bearer token rather than a session: the national repository
     // is a machine caller.
-    Route::middleware([EnsureFhirBearerToken::class, 'throttle:api'])
+    // throttle:interoperability, not throttle:api: NFR-03 asks this gateway
+    // for 250 ms at a concurrency of 50, which the 120/minute interactive
+    // budget cannot deliver.
+    Route::middleware([EnsureFhirBearerToken::class, 'throttle:interoperability'])
         ->prefix('fhir')
         ->name('fhir.')
         ->group(function (): void {
@@ -90,7 +93,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     // --- BPJS VClaim simulator --------------------------------------------------
     // FR-19..FR-21. HMAC handshake instead of a token.
-    Route::middleware([BpjsSignatureAuth::class, 'throttle:api'])
+    Route::middleware([BpjsSignatureAuth::class, 'throttle:bpjs'])
         ->prefix('bpjs/vclaim')
         ->name('bpjs.vclaim.')
         ->group(function (): void {
