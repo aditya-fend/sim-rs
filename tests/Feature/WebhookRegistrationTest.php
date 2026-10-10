@@ -41,10 +41,14 @@ it('registers an endpoint with a system-generated secret', function (): void {
         ->and($raw)->not->toBe($endpoint->secret());
 });
 
-it('offers only the events the dispatcher can actually emit', function (): void {
-    expect(WebhookDispatcher::EVENTS)
-        ->toContain('clinical.submission.created')
-        ->toContain('clinical.assessment.locked');
+it('offers every event api-spec.md documents, and nothing it does not', function (): void {
+    // The list must track what the code actually emits, not what it once did:
+    // offering an event nothing emits silently drops the integration.
+    expect(WebhookDispatcher::EVENTS)->toBe([
+        'clinical.submission.created',
+        'clinical.assessment.locked',
+        'interoperability.satusehat.synced',
+    ]);
 });
 
 it('refuses an endpoint that subscribes to an unknown event', function (): void {

@@ -30,6 +30,7 @@ final class WebhookDispatcher
     public const EVENTS = [
         'clinical.submission.created',
         'clinical.assessment.locked',
+        'interoperability.satusehat.synced',
     ];
 
     public function __construct(

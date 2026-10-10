@@ -344,3 +344,50 @@ sequenceDiagram
     Audit-->>SubController: Success
     SubController-->>Client: HTTP 201 Created (Submission UUID)
 ```
+## Endpoints added during implementation
+
+Not in the original endpoint list. Each exists because a requirement elsewhere
+in the specification cannot be met without it; the portal drives the first
+three over the same routes.
+
+### A. Register a walk-in patient
+- **Method**: `POST`
+- **Path**: `/patients`
+- **Auth Required**: Yes (`Triage Nurse`, `DPJP`, `Admin`)
+- **Request Body**: `medical_record_number`, `full_name`, `birth_date`, `gender`, `nik` (16 digits), and optionally `phone`, `address`, `bpjs_card_number` (13 digits), `ihs_patient_id`.
+- **Response Schema**: `id`, `medical_record_number`, `full_name`, `nik_masked`.
+- **Notes**: The NIK is never echoed back and never reaches the database in clear; `nik_hash` is derived from it in the same write. The shared secret is generated server-side, never accepted from the client.
+- **Errors**: HTTP 403 (role without `create` on `Patient`), HTTP 422 (duplicate `medical_record_number`, malformed NIK/BPJS, future `birth_date`).
+
+### B. Read a patient record
+- **Method**: `GET`
+- **Path**: `/patients/{patient}`
+- **Response Schema**: as endpoint 1's `data`, plus `age`, `blood_type`, `allergies`.
+- **Errors**: HTTP 403, HTTP 404.
+
+### C. List a patient's encounters
+- **Method**: `GET`
+- **Path**: `/encounters`
+- **Request Parameters**: `patient_id` (optional), `status` (optional), `per_page` (optional, default 25).
+- **Response Schema**: paginated encounter list with `id`, `visit_type`, `status`, `started_at`, `finished_at`.
+- **Notes**: Powers the encounter table under the NIK search on the intake screen.
+
+### D. Synchronise a draft
+- **Method**: `PUT`
+- **Path**: `/encounters/{encounter}/drafts/{form_template}`
+- **Request Body**: `draft_payload`, `client_saved_at`.
+- **Notes**: The 30 s server-side half of the R-03 dual-buffer draft strategy. The 5 s local half is `localStorage` and never leaves the workstation.
+
+### E. Confirming and revoking MFA (session-authenticated, not API)
+- `GET|POST /portal/account/two-factor`, `POST /portal/account/two-factor/confirm`, `DELETE /portal/account/two-factor`
+- security.md §MFA defines the requirement but names no route. `POST` issues a candidate secret and returns an `otpauth://` URI; `confirm` verifies a live 6-digit code, sets `two_factor_secret_confirmed_at` and issues recovery codes once; `DELETE` re-asks for the current password so a hijacked session cannot downgrade a login.
+
+### F. Webhook subscriber registry (session-authenticated, not API)
+- `GET|POST /admin/webhooks`, `PUT|DELETE /admin/webhooks/{id}`
+- Admin only, gated on `manage` against `App\Models\WebhookEndpoint`. The selectable event list is read from `WebhookDispatcher::EVENTS`, so the form cannot offer a subscription that no code emits.
+
+### Disagreements with the original specification
+
+1. **`Encounter.serviceType`** — this section models `serviceType` as an array. FHIR R4's `Encounter.serviceType` is `0..1 CodeableConcept`, so the transformer emits a single element. Documented here rather than changed in place.
+2. **Schema versioning** — several examples in this document render `version` as a string (`"2"`). The column is `integer`, so JSON payloads carry `2`. The examples are illustrative; the type is not.
+3. **SEP number format** — erd.md implies a 19-character SEP number. The concrete example in section 6 is 20 characters (`0001R1234 2024B1234567`), and `App\Services\Interoperability\Bpjs\SepService` validates that example's shape.

@@ -58,3 +58,26 @@
 | **Backup & Object Storage** | 100GB Encrypted Backup Storage & Snapshot Retention | $10.00 |
 | **Domain & SSL / DNS** | Custom hospital domain, wildcard TLS certificate | $5.00 |
 | **Total Estimated Monthly Cost** | **Production-grade regional hospital deployment** | **$84.00 / month** |
+## Implementation deviations from this document
+
+Recorded during the build; each is a deliberate choice with a reason, not drift.
+
+| Specified here | Implemented | Why |
+| :--- | :--- | :--- |
+| Laravel 11 | Laravel 12.69.3 | Laravel 11 is end-of-life and every 11.x release carries an unresolved security advisory. `composer audit` is clean on 12. |
+| Vite 5 | Vite 7.3.7 | Vite 5 pulls `esbuild <= 0.24.2` (GHSA-67mh-4wv8-2f99) and `vite <= 5.4.19` (GHSA-g4jq-h2w9-997g); both are dev-server advisories with no patched 5.x release. |
+| Tailwind CSS 3.4 | Tailwind CSS 4.3.3 | Same advisory chain: `@tailwindcss/vite 3.x` depends on the vulnerable Vite range, and Tailwind 3.4.x has no standalone fix. |
+| Pest 2.x & PHPUnit 10.x | Pest 3.2 / PHPUnit 11.5.56 | Pest 2 is only compatible with PHPUnit 10, which is what drags in Laravel 11's test harness. |
+| PHPStan (Level 8) | PHPStan 2.3.1 via Larastan | Level 8 as specified; Larastan adds the Eloquent-aware stubs that make that level reachable on a Laravel codebase. |
+
+Additions beyond this document, each added because a referenced feature could not work without it:
+
+- `dompdf/dompdf` — the Permenkes 24/2022 compliance PDF (AC-11).
+- `justinrainbow/json-schema` — validating the form schema itself, not just submitted payloads.
+- `laravel/telescope` — deployment.md's request/audit inspection requirement.
+- `laravel/dusk` — the E2E-01..05 scenarios in testing.md.
+
+`phpunit.xml` coverage is measured over `app/Http/Requests`, `app/Casts`,
+`app/Services/FormEngine`, `app/Services/Clinical` and
+`app/Services/Interoperability`, which is what the ≥90% target in testing.md
+names. PCOV is the driver in CI and in the container image.

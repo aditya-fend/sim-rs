@@ -28,7 +28,7 @@ class SyncEncounterToSatuSehat implements ShouldQueue
     public int $tries = 3;
 
     /**
-     * Exponential backoff: 10 s, 40 s, 90 s.
+     * Exponential backoff: 10 s, 30 s, 60 s.
      *
      * @var list<int>
      */

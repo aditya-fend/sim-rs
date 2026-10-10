@@ -495,3 +495,35 @@ erDiagram
         timestamptz updated_at
     }
 ```
+## Tables added during implementation
+
+The 10 entities above are the domain. These carry the security and integration
+requirements the entity list does not name, and are not part of that count.
+
+| Table | Why it exists |
+| :--- | :--- |
+| `webhook_endpoints` | The registry behind `/admin/webhooks` (architecture.md §Integration). Holds the subscriber URL, the event list, a system-generated shared secret encrypted with `EncryptedGcm`, and an active flag so an endpoint can be disabled without losing its history. |
+| `idempotency_keys` | Backs the `X-Idempotency-Key` replay behaviour in api-spec.md. Stores the key, the actor, a request fingerprint and the serialised 201 so a repeated submit within 24 h is answered from cache rather than persisted twice. |
+| `telescope_entries` | Installed by `laravel/telescope`; deployment.md requires request and query inspection in a deployed environment. |
+
+Columns added to an existing entity:
+
+- `users.two_factor_secret` — the RFC 6238 TOTP shared secret, `EncryptedGcm`.
+- `users.two_factor_secret_confirmed_at` — non-null once a clinician has
+  proved possession of a live code. The login challenge keys on this column
+  rather than on the secret, so a half-finished enrolment cannot lock anyone
+  out of their account.
+- `users.two_factor_recovery_codes` — single-use recovery codes, stored as a
+  hash rather than in clear, and shown to the clinician exactly once.
+- `encounters.satusehat_encounter_id`, `encounters.satusehat_sync_status` —
+  the outbound sync state behind `interoperability.satusehat.synced`.
+
+### Note on `form_submissions.payload_data`
+
+`payload_data` is JSONB and therefore readable in clear by design: it holds
+structured clinical values that the portal must render back for review. Any
+field the schema marks `confidential` is lifted out of it by
+`App\Services\FormEngine\SubmissionService` and stored in the separately
+encrypted `encrypted_anamnesis` column instead. The flag lives in the schema
+(`"confidential": true`), not in code, so a ward adding a field cannot
+accidentally store a narrative in clear.
