@@ -25,11 +25,14 @@
     --color-brand-700: #1d4ed8;
 
     /* ATS triage categories. Each is paired with a textual label in the UI so
-       colour is never the sole carrier of meaning (ui-spec.md Accessibility). */
+       colour is never the sole carrier of meaning (ui-spec.md Accessibility).
+       The values below are darkened from the usual palette tails because they
+       carry white badge text: #ea580c/#d97706/#16a34a measured 3.6/3.2/3.3:1,
+       under the 4.5:1 WCAG AA floor for body text. Now 5.2/5.0/5.0:1. */
     --color-triage-resus: #dc2626;
-    --color-triage-emergent: #ea580c;
-    --color-triage-urgent: #d97706;
-    --color-triage-lessurgent: #16a34a;
+    --color-triage-emergent: #c2410c;
+    --color-triage-urgent: #b45309;
+    --color-triage-lessurgent: #15803d;
     --color-triage-nonurgent: #2563eb;
 
     /* Validation, draft and signature states */

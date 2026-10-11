@@ -72,3 +72,29 @@ it('refuses to compute an index when no pepper is configured', function (): void
     expect(fn () => (new BlindIndexer)->hash('3315012345670001'))
         ->toThrow(RuntimeException::class);
 });
+
+/**
+ * NFR-04 — a blind index lookup must answer within 50 ms.
+ *
+ * ponytail: the spec says "across a table of up to 1,000,000 patient records",
+ * and seeding a million rows here would dominate the test suite. This measures
+ * the query against whatever the suite holds, so it guards against an index
+ * regression — it does not by itself prove the requirement at full scale. Run
+ * the figure against a million-row dataset before treating NFR-04 as met.
+ */
+it('answers a NIK lookup inside the NFR-04 budget of 50 ms', function (): void {
+    $indexer = app(BlindIndexer::class);
+    $nik = '3315012345670001';
+
+    // Warm the plan cache so the first parse is not counted.
+    $indexer->findPatient($nik);
+
+    $iterations = 50;
+    $started = hrtime(true);
+
+    for ($i = 0; $i < $iterations; $i++) {
+        $indexer->findPatient($nik);
+    }
+
+    expect((hrtime(true) - $started) / 1e6 / $iterations)->toBeLessThan(50.0);
+});

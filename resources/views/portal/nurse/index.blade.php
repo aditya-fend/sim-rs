@@ -67,7 +67,7 @@
 
     <h2 class="mb-3 text-heading-sm">Kunjungan menunggu triase</h2>
 
-    <div class="card overflow-x-auto">
+    <div class="card overflow-x-auto" tabindex="0">
         <table class="w-full border-collapse text-body-sm">
             <caption class="sr-only">Daftar kunjungan yang menunggu formulir triase</caption>
             <thead>

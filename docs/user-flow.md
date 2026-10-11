@@ -337,7 +337,7 @@ flowchart TD
     %% Nurse Branch
     RoleSplit -->|Nurse| N_Dash[/Nurse Portal: /portal/nurse/intake/]
     N_Dash --> N_Search[Patient Search: NIK / RM]
-    N_Search --> N_Form[/Triage Intake Form: /portal/nurse/intake/form/]
+    N_Search --> N_Form[/Triage Intake Form: /portal/nurse/intake/{encounter}/]
     N_Form --> N_Widget1[GCS Calculator]
     N_Form --> N_Widget2[Pain Canvas]
     N_Form --> N_Widget3[Pediatric Dosage]

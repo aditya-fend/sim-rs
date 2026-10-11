@@ -11,7 +11,7 @@
         </p>
     </header>
 
-    <div class="card overflow-x-auto">
+    <div class="card overflow-x-auto" tabindex="0">
         <table class="w-full border-collapse text-body-sm">
             <caption class="sr-only">Kunjungan yang menunggu asesmen dokter</caption>
             <thead>

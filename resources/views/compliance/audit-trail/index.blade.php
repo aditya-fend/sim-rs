@@ -61,7 +61,7 @@
             </div>
         </form>
 
-        <div class="card overflow-x-auto">
+        <div class="card overflow-x-auto" tabindex="0">
             <table class="w-full border-collapse text-body-sm">
                 <caption class="sr-only">Daftar akses rekam medis yang tercatat</caption>
                 <thead>

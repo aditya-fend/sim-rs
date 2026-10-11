@@ -76,6 +76,9 @@ Additions beyond this document, each added because a referenced feature could no
 - `justinrainbow/json-schema` — validating the form schema itself, not just submitted payloads.
 - `laravel/telescope` — deployment.md's request/audit inspection requirement.
 - `laravel/dusk` — the E2E-01..05 scenarios in testing.md.
+- `axe-core` (dev) — runs WCAG 2.1 AA against the rendered screens for NFR-07.
+  Injected from `node_modules` at test time, so nothing is vendored into
+  `public/`.
 
 `phpunit.xml` coverage is measured over `app/Http/Requests`, `app/Casts`,
 `app/Services/FormEngine`, `app/Services/Clinical` and

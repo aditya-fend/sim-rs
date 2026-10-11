@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Browser;
 
+use App\Enums\SubmissionStatus;
+use App\Enums\TriageCategory;
 use App\Models\Encounter;
+use App\Models\FormSubmission;
+use App\Models\FormTemplate;
+use App\Models\User;
 use Closure;
 use Database\Seeders\RoleSeeder;
+use Facebook\WebDriver\WebDriverDimension;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -31,6 +37,11 @@ class AccessibilityTest extends DuskTestCase
         // and the login intermittently answers 429, which surfaces as a
         // timeout rather than as the throttle that caused it.
         Cache::flush();
+
+        // Dusk reuses the Chrome window, so a scenario that resizes it would
+        // otherwise decide the viewport of every test that runs after it.
+        $this->browse(fn (Browser $browser) => $browser->driver
+            ->manage()->window()->setSize(new WebDriverDimension(1600, 1000)));
     }
 
     public function test_the_login_screen_has_no_serious_violations(): void
@@ -48,6 +59,37 @@ class AccessibilityTest extends DuskTestCase
             $this->assertNoSeriousViolations($browser, function () use ($browser, $encounter): void {
                 $browser->visit("/portal/nurse/intake/{$encounter->id}")->waitFor('#field-triage_category', 15);
             });
+        });
+    }
+
+    /**
+     * NFR-09 — the layout must hold from 1024px (the ward terminal floor in
+     * ui-spec.md) up to 1920px. Every other scenario here runs at the Dusk
+     * default of 1600x1000, so the lower bound was never exercised.
+     *
+     * The encounter carries a submitted triage on purpose: the patient strip
+     * only renders its category badge once a submission exists, so without one
+     * this would check an empty shell and miss the badge contrast entirely.
+     */
+    public function test_the_triage_form_holds_at_the_1024px_ward_floor(): void
+    {
+        $encounter = $this->encounterWithTriageBadge();
+
+        $this->browse(function (Browser $browser) use ($encounter): void {
+            $browser->driver->manage()->window()->setSize(new WebDriverDimension(1024, 768));
+
+            $this->login($browser, RoleSeeder::NURSE);
+
+            $this->assertNoSeriousViolations($browser, function () use ($browser, $encounter): void {
+                $browser->visit("/portal/nurse/intake/{$encounter->id}")->waitFor('#field-triage_category', 15);
+            });
+
+            // Nothing may spill sideways at the narrow end of the range.
+            $overflow = $browser->script(
+                'return document.documentElement.scrollWidth - document.documentElement.clientWidth;'
+            )[0];
+
+            expect($overflow)->toBeLessThanOrEqual(0);
         });
     }
 
@@ -71,6 +113,31 @@ class AccessibilityTest extends DuskTestCase
                 $browser->visit('/admin/schemas')->waitForText('Skema', 15);
             });
         });
+    }
+
+    /**
+     * Built straight through the model rather than by replaying the intake
+     * flow: what axe needs from this record is a rendered category badge, not
+     * a demonstrated submission journey.
+     */
+    private function encounterWithTriageBadge(): Encounter
+    {
+        $encounter = Encounter::query()->firstOrFail();
+        $template = FormTemplate::query()->where('is_active', true)->firstOrFail();
+
+        $submission = new FormSubmission([
+            'form_template_id' => $template->id,
+            'encounter_id' => $encounter->id,
+            'patient_id' => $encounter->patient_id,
+            'authored_by' => User::query()->firstOrFail()->id,
+            'schema_version' => $template->version,
+            'status' => SubmissionStatus::Submitted,
+            'payload_data' => [],
+            'triage_category' => TriageCategory::Urgent,
+        ]);
+        $submission->save();
+
+        return $encounter;
     }
 
     private function login(Browser $browser, string $role): void

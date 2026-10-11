@@ -30,24 +30,24 @@ Tokens map directly to Tailwind CSS utility conventions and are defined in hex a
 | `color-surface-base` | `#FFFFFF` | Cards, modal sheets, panels | 1.05:1 vs Canvas |
 | `color-surface-subtle` | `#F1F5F9` | Read-only inputs, table zebra rows, widget wells | 1.14:1 vs Canvas |
 | `color-border-subtle` | `#E2E8F0` | Structural card borders, unselected input borders | 1.25:1 vs Canvas |
-| `color-border-strong` | `#94A3B8` | Focused/active borders, active card borders | 3.0:1 vs Canvas |
+| `color-border-strong` | `#94A3B8` | Focused/active borders, active card borders | 2.6:1 vs Surface (decoration only, so the 3:1 non-text floor in WCAG 1.4.11 does not apply) |
 | `color-text-primary` | `#0F172A` | Clinical headers, primary clinical data, values | 15.6:1 vs Surface |
 | `color-text-secondary` | `#475569` | Field labels, metadata strings, subheaders | 7.3:1 vs Surface |
 | `color-text-muted` | `#64748B` | Helper copy, timestamps, inactive icons | 4.8:1 vs Surface |
 | `color-brand-50` | `#EFF6FF` | Primary button hover highlight, light blue tint | 1.1:1 vs Surface |
 | `color-brand-600` | `#2563EB` | Interactive brand primary (actions, active tab) | 4.6:1 vs Surface |
 | `color-brand-700` | `#1D4ED8` | Brand active/pressed state | 6.5:1 vs Surface |
-| `color-triage-resus` | `#DC2626` | Triage: Resuscitation (Red) / Critical Alert | 4.9:1 vs White |
-| `color-triage-emergent` | `#EA580C` | Triage: Emergent (Orange) | 4.5:1 vs White |
-| `color-triage-urgent` | `#D97706` | Triage: Urgent (Yellow/Amber) | 4.5:1 vs White |
-| `color-triage-lessurgent` | `#16A34A` | Triage: Less Urgent (Green) / Normal / Locked | 4.6:1 vs White |
+| `color-triage-resus` | `#DC2626` | Triage: Resuscitation (Red) / Critical Alert | 4.8:1 vs White |
+| `color-triage-emergent` | `#C2410C` | Triage: Emergent (Orange) | 5.2:1 vs White |
+| `color-triage-urgent` | `#B45309` | Triage: Urgent (Yellow/Amber) | 5.0:1 vs White |
+| `color-triage-lessurgent` | `#15803D` | Triage: Less Urgent (Green) / Normal / Locked | 5.0:1 vs White |
 | `color-triage-nonurgent` | `#2563EB` | Triage: Non-Urgent (Blue) | 4.6:1 vs White |
 | `color-danger-50` | `#FEF2F2` | Validation error callout background | 1.05:1 vs Surface |
-| `color-danger-600` | `#DC2626` | Validation error border, inline error text | 4.9:1 vs Surface |
+| `color-danger-600` | `#DC2626` | Validation error border, inline error text | 4.8:1 vs Surface |
 | `color-warning-50` | `#FFFBEB` | Local draft unsaved amber warning background | 1.05:1 vs Surface |
-| `color-warning-600` | `#D97706` | Local draft unsaved border, warning badges | 4.5:1 vs Surface |
+| `color-warning-600` | `#B45309` | Local draft unsaved border, warning badges | 5.0:1 vs Surface |
 | `color-success-50` | `#F0FDF4` | Signed record background banner | 1.05:1 vs Surface |
-| `color-success-700` | `#15803D` | Permenkes signature verification badge text | 5.2:1 vs Surface |
+| `color-success-700` | `#15803D` | Permenkes signature verification badge text | 5.0:1 vs Surface |
 
 ### Typography Tokens
 Typography uses a clean, native system stack (`ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`) optimized for high legibility across generic hospital LCD monitors.
@@ -332,14 +332,14 @@ To guarantee cultural and operational precision in Indonesian regional hospital 
       "color-brand-600": "#2563EB",
       "color-brand-700": "#1D4ED8",
       "color-triage-resus": "#DC2626",
-      "color-triage-emergent": "#EA580C",
-      "color-triage-urgent": "#D97706",
-      "color-triage-lessurgent": "#16A34A",
+      "color-triage-emergent": "#C2410C",
+      "color-triage-urgent": "#B45309",
+      "color-triage-lessurgent": "#15803D",
       "color-triage-nonurgent": "#2563EB",
       "color-danger-50": "#FEF2F2",
       "color-danger-600": "#DC2626",
       "color-warning-50": "#FFFBEB",
-      "color-warning-600": "#D97706",
+      "color-warning-600": "#B45309",
       "color-success-50": "#F0FDF4",
       "color-success-700": "#15803D"
     },

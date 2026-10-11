@@ -156,7 +156,9 @@ Three requirements had no automated check. Each now has one:
 | :--- | :--- | :--- | :--- |
 | NFR-01 | FCP < 1.2 s, TTI < 1.8 s | `tests/Browser/FrontendPerformanceTest.php` reads Chrome's own Paint Timing | pass |
 | NFR-02 | Encryption overhead < 25 ms/record | wall-clock assertion in `tests/Unit/EncryptedGcmTest.php` | pass |
+| NFR-04 | Blind index lookup < 50 ms | wall-clock assertion in `tests/Unit/BlindIndexerTest.php` | pass |
 | NFR-07 | WCAG 2.1 AA | axe-core (WCAG2A + WCAG2AA tags) across login, nurse intake, audit console and the schema manager, in `tests/Browser/AccessibilityTest.php` | pass |
+| NFR-09 | Responsive 1024–1920 px | one scenario pins the window to 1024x768 — the ward terminal floor — and asserts no horizontal overflow | pass |
 
 Only axe violations marked *serious* or *critical* fail the run; the moderate
 and minor rules are advisory and would make the gate noise rather than signal.
@@ -168,3 +170,23 @@ body text. Darkened to `#b45309` (5.02:1 on white, 4.84:1 on `warning-50`).
 `axe-core` is a devDependency and is injected straight from `node_modules` at
 test time, so nothing is vendored into `public/` and there is no build artefact
 to keep in sync.
+
+### Requirements that are not verified from the application
+
+| Requirement | Why not |
+| :--- | :--- |
+| NFR-05 — 99.9% uptime | An operational property of the deployed service, measured by monitoring over time. Nothing in the application can assert it; it needs uptime SLI/SLO instrumentation in production, which this repository does not carry. |
+| NFR-08 — full keyboard navigation | Partly covered: the pain map's arrow/Enter/0-9 handling exists, but no test drives the keyboard end to end. |
+
+### Scale caveats on the latency checks
+
+NFR-04 is asserted against the rows the test suite holds. The requirement is
+stated for a table of up to 1,000,000 patient records, and seeding that many
+would dominate the suite's runtime, so the assertion guards against an index
+regression rather than proving the requirement at full scale. Run the figure
+against a million-row dataset before treating NFR-04 as met.
+
+NFR-01 is read out of Chrome on the same VM that serves the application. It is
+a regression guard, not a hardware-accurate result: the spec targets an Intel
+Core i3 / 4 GB over a 10 Mbps ward link, which only real ward hardware can
+confirm.
