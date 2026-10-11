@@ -57,6 +57,21 @@ ENV COMPOSER_ALLOW_SUPERUSER=1 \
 
 WORKDIR /var/www/html
 
+# Frontend build. public/build is in .gitignore, so it is never in the repo —
+# an image built without this stage ships the app with no stylesheet and no
+# script at all, which is exactly what it looked like before this stage.
+FROM node:22-alpine AS assets
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY vite.config.js ./
+COPY resources/ resources/
+RUN npm run build
+
+
 # Production target: deployment.md §5 specifies PHP 8.3-FPM behind Nginx. The
 # CLI base above is for development and the test suites; the CLI server is not
 # a production SAPI, and its per-request overhead is large enough to distort
@@ -92,6 +107,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --chown=www-data:www-data docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-klinikform.conf
 COPY --chown=www-data:www-data docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=assets /build/public/build ./public/build
 COPY --chown=www-data:www-data . /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
@@ -101,6 +117,37 @@ USER www-data
 EXPOSE 9000
 
 CMD ["php-fpm", "-F"]
+
+# Single-container target for PaaS hosts (Render and friends): those platforms
+# expose one HTTP port and do not put an Nginx in front of PHP, so this serves
+# over the built-in server instead of the FPM pool.
+#
+# ponytail: artisan serve is the development SAPI and carries real per-request
+# overhead, which is fine for a demo nobody depends on. If this ever serves real
+# traffic, move it behind the `fpm` stage with a reverse proxy.
+FROM base AS deploy
+
+ENV APP_ENV=production \
+    APP_DEBUG=false
+
+WORKDIR /var/www/html
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=assets /build/public/build ./public/build
+COPY . .
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs \
+    && chmod -R ug+rwx storage bootstrap/cache
+
+# Bootstrapped from platform variables on every boot rather than baked in: an
+# APP_KEY baked into a published image is a published secret.
+RUN php artisan config:clear
+
+EXPOSE 8000
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000", "--no-reload"]
+
 
 # Dusk target: identical toolchain plus a matched chromium/chromedriver pair.
 FROM base AS dusk

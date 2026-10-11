@@ -1,0 +1,84 @@
+# KlinikForm SIMRS — Render blueprint.
+#
+#   1. Create the database first (free, no expiry): https://console.neon.tech
+#   2. Copy its connection string.
+#   3. Render → New → Blueprint → point at this repository.
+#   4. Paste the connection string into DB_URL.
+#
+# There is deliberately no `databases:` block here. Render's free Postgres is
+# deleted 30 days after creation, which would take the demo link down with it.
+# Neon has no expiry, so the database lives in Neon and only the web service
+# lives here.
+
+services:
+  - type: web
+    name: klinikform-simrs
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /up
+
+    # Builds the `deploy` target, which copies the source, runs
+    # `composer install --no-dev` and takes the compiled frontend assets from
+    # the `assets` stage. That stage is not optional: public/build is
+    # gitignored, so an image built without it serves the app with no
+    # stylesheet at all.
+    #
+    # The start command comes from the stage's own CMD — artisan serve on
+    # :8000. Restating it here would only give the two a chance to disagree.
+
+    # Runs before the new instance takes traffic, not on the first request.
+    preDeployCommand: php artisan migrate --force
+
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        sync: false
+
+      # Neon connection string. It ends in ?sslmode=require, which is what makes
+      # TLS to the database mandatory rather than optional.
+      - key: DB_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+
+      # No Redis. The cache, sessions and jobs tables already ship in the
+      # migrations, so a hosted Redis would be a service billing nothing but
+      # latency.
+      - key: CACHE_STORE
+        value: database
+      - key: SESSION_DRIVER
+        value: database
+
+      # ponytail: `sync` runs the SatuSehat job inline, inside the request that
+      # created the encounter, costing about a second on that one request. A
+      # separate queue worker would consume more of Render's 750 free
+      # instance-hours than a demo is worth. Move to `database` plus a worker
+      # once there are real users.
+      - key: QUEUE_CONNECTION
+        value: sync
+
+      # Generate with `openssl rand -base64 32`. Re-running key:generate after
+      # any data exists makes every AES-256-GCM column unreadable — use
+      # `php artisan klinikform:rotate-keys` for a deliberate rotation.
+      - key: APP_KEY
+        generateValue: true
+      # Generate with `openssl rand -hex 32`. Changing this later orphans every
+      # patient's NIK lookup, because nik_hash is derived from it.
+      - key: BLIND_INDEX_PEPPER
+        generateValue: true
+      - key: FAPI_TOKEN
+        generateValue: true
+
+      # Off by default: Telescope records the full body of outbound BPJS and
+      # FHIR calls, which carry card numbers and NIKs in the clear.
+      - key: TELESCOPE_ENABLED
+        value: "false"
+      - key: TELESCOPE_DRIVER
+        value: database

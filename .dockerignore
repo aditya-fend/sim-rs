@@ -1,0 +1,47 @@
+# Without this, every build uploads the whole working tree — vendor/, a few
+# hundred MB of node_modules/ and .git/ — and then throws it away at the
+# COPY. Render's free tier only includes 500 build minutes a month, so the
+# wasted upload is the difference between a deploy that fits in the budget and
+# one that does not.
+
+.git
+.github
+.gitignore
+.editorconfig
+
+# Secrets and local overrides. The image is built from variables injected by
+# the platform, never from a committed file.
+.env
+.env.backup
+.env.production
+.env.production.example
+
+# Installed inside the image by composer install / npm ci.
+vendor/
+node_modules/
+
+# Rebuilt inside the image by the `assets` stage. Sending a host build would
+# pin the image to whatever CSS was on the machine that pushed it.
+/public/build
+/public/hot
+/public/storage
+
+# Runtime state.
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*.php
+
+# Test artefacts and editor noise.
+.phpunit.cache
+.phpunit.result.cache
+.pint.cache
+.phpactor.json
+.DS_Store
+.idea
+.vscode
+tests/Browser/console
+tests/Browser/screenshots
+tests/Browser/source
